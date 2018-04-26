@@ -93,7 +93,7 @@ contract Neuron {
         require((allowance == 0) || (allowances[msg.sender][entity] == 0));
         allowances[msg.sender][entity] = allowance;
         
-        Approval(msg.sender, entity, allowance);
+        emit Approval(msg.sender, entity, allowance);
         
         return true;
     }
