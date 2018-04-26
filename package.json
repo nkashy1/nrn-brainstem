@@ -1,0 +1,18 @@
+{
+  "name": "nrn-brainstem",
+  "version": "0.0.1",
+  "description": "NRN and related smart contracts",
+  "main": "README.md",
+  "repository": "git@github.com:doc-ai/nrn-brainstem.git",
+  "author": "Neeraj Kashyap <neeraj@doc.ai>",
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "solc": "^0.4.23",
+    "web3": "^1.0.0-beta.34"
+  },
+  "devDependencies": {
+    "ganache-cli": "^6.1.0",
+    "prettier": "1.12.1"
+  }
+}
