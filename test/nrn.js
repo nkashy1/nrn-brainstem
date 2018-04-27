@@ -382,11 +382,7 @@ describe('ERC20 methods', () => {
                         );
                     }
 
-                    return done(
-                        new Error(
-                            `Expected: error, actual: success {$success}`
-                        ),
-                    );
+                    return done(new Error('Expected: error, actual: success {$success}'));
                 },
             );
         });
@@ -424,7 +420,7 @@ describe('ERC20 methods', () => {
                         );
                     }
 
-                    return done(new Error(`Expected: error, actual: success {$success}`));
+                    return done(new Error('Expected: error, actual: success {$success}'));
                 },
             );
         });
