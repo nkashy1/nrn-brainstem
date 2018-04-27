@@ -8,6 +8,7 @@
   "license": "Apache-2.0",
   "private": true,
   "dependencies": {
+    "async": "^2.6.0",
     "lodash": "^4.17.10",
     "solc": "^0.4.23",
     "web3": "0.20.6"
