@@ -148,6 +148,9 @@ contract Neuron {
     function reclaimBalanceFrom(Neuron oldNeuron, address account, uint256 amount) public returns (bool) {
         require(reclamationWhitelist[address(oldNeuron)]);
         require(oldNeuron.transferFrom(account, this, amount));
+        // Calling increaseSupply and transfer as external methods means that, in
+        // those calls, msg.sender is the address of the contract instance in which
+        // the reclaimBalanceFrom method was called.
         this.increaseSupply(amount);
         require(this.transfer(account, amount));
         return true;
