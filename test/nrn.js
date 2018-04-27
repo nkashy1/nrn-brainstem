@@ -18,6 +18,11 @@ const contractBytecode = _.get(compiledContract, 'bytecode');
  * Does this by populating the `configuration` object, defined in the scope
  * of each test case.
  *
+ * NOTE:
+ * ganache-core is used to simulate an Ethereum node. We use here the default settings, which
+ * provide 10 unlocked accounts on the simulated node. Changes in this default behaviour could
+ * result in our tests breaking.
+ *
  * The fields it populates in the configuration object are:
  * 1. accounts - list of (unlocked) account objects available as part of the scenario
  * 2. account_addresses - list of addresses for each of the accounts (in the same order
@@ -40,7 +45,9 @@ function setUp(configuration) {
     configuration.account_addresses = Object.keys(configuration.accounts);
     configuration.web3 = new Web3();
     configuration.web3.setProvider(configuration.provider);
-    configuration.Neuron = configuration.web3.eth.contract(JSON.parse(_.get(compiledContract, 'interface')));
+    configuration.Neuron = configuration.web3.eth.contract(
+        JSON.parse(_.get(compiledContract, 'interface')),
+    );
     /* eslint-enable no-param-reassign */
 }
 
@@ -138,7 +145,8 @@ describe('NRN construction', () => {
                         data: contractBytecode,
                         gas: 2 * gasEstimate,
                     },
-          (creationErr, contractInstance) => { // eslint-disable-line
+                    /* eslint-disable consistent-return */
+                    (creationErr, contractInstance) => {
                         if (creationErr) {
                             return done(creationErr);
                         }
@@ -149,6 +157,7 @@ describe('NRN construction', () => {
                             return done();
                         }
                     },
+                    /* eslint-enable consistent-return */
                 );
             },
         );
@@ -157,7 +166,7 @@ describe('NRN construction', () => {
     it('should raise an error if it is called with insufficient gas', done =>
         configuration.web3.eth.estimateGas(
             { data: contractBytecode },
-            (err, gasEstimate) => { // eslint-disable-line no-unused-vars
+            (err, gasEstimate) => {
                 if (err) {
                     return done(err);
                 }
@@ -171,7 +180,7 @@ describe('NRN construction', () => {
                         data: contractBytecode,
                         gas: 1,
                     },
-                    (creationErr, contractInstance) => { // eslint-disable-line no-unused-vars
+                    (creationErr, contractInstance) => {
                         if (creationErr) {
                             return done();
                         }
@@ -213,8 +222,8 @@ describe('ERC20 methods', () => {
                         data: contractBytecode,
                         gas: 2 * gasEstimate,
                     },
-                    (creationErr, contractInstance) => { // eslint-disable-line consistent-return
-                        // eslint-disable-line consistent-return
+                    /* eslint-disable consistent-return */
+                    (creationErr, contractInstance) => {
                         if (creationErr) {
                             return done(creationErr);
                         }
@@ -226,6 +235,7 @@ describe('ERC20 methods', () => {
                             return done();
                         }
                     },
+                    /* eslint-enable consistent-return */
                 );
             },
         );
@@ -299,4 +309,86 @@ describe('ERC20 methods', () => {
                 return done();
             },
         ));
+
+    describe('transfer', () => {
+        it('should allow any account to send its own funds to any other account', (done) => {
+            getGasEstimateAndCall(
+                configuration.neuronInstance.transfer,
+                configuration.account_addresses[0],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                10,
+                (err, success) => {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    if (!success) {
+                        return done(
+                            new Error(
+                                'Expected: transfer successful, actual: transfer unsuccessful',
+                            ),
+                        );
+                    }
+
+                    return getGasEstimateAndCall(
+                        configuration.neuronInstance.balanceOf,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[1],
+                        (balanceErr, balance) => {
+                            if (balanceErr) {
+                                return done(balanceErr);
+                            }
+
+                            assert.strictEqual(balance.toNumber(), 10);
+                            return done();
+                        },
+                    );
+                },
+            );
+        });
+
+        it('should raise an error if an account attempts to send more of its own fund than it controls to any other account', (done) => {
+            getGasEstimateAndCall(
+                configuration.neuronInstance.transfer,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[0],
+                20,
+                (transferErr, success) => {
+                    if (transferErr) {
+                        return async.map(
+                            configuration.account_addresses,
+                            async.apply(
+                                getGasEstimateAndCall,
+                                configuration.neuronInstance.balanceOf,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                            ),
+                            (balancesErr, balances) => {
+                                if (balancesErr) {
+                                    return done(balancesErr);
+                                }
+
+                                assert.strictEqual(balances[0].toNumber(), 90);
+                                assert.strictEqual(balances[1].toNumber(), 10);
+                                balances
+                                    .slice(2)
+                                    .forEach(balance =>
+                                        assert.strictEqual(balance.toNumber(), 0));
+                                return done();
+                            },
+                        );
+                    }
+
+                    return done(
+                        new Error(
+                            'Expected: transfer unsuccessful, actual: transfer successful',
+                        ),
+                    );
+                },
+            );
+        });
+    });
 });
