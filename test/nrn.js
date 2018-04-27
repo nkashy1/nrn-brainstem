@@ -33,6 +33,10 @@ const contractBytecode = _.get(compiledContract, 'bytecode');
  *
  * @param {Object} configuration - Object that should be populated with the test configuration
  * parameters
+ * @param {boolean} withNeuronInstance - If true, signifies that caller wants this function to
+ * set up the text fixture with an instance of the Neuron contract (under the neuronInstance
+ * key
+ * @param {callback} done - This callback must only be provided if `withNeuronInstance` is true
  */
 function setUp(configuration, withNeuronInstance, done) {
     /* eslint-disable no-param-reassign */
