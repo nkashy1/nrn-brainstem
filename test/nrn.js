@@ -51,7 +51,9 @@ function setUp(configuration, withNeuronInstance, done) {
 
     if (withNeuronInstance) {
         if (!done) {
-            throw new Error('Configuration with Neuron instance must be asynchronous, but no callback was provided');
+            throw new Error(
+                'Configuration with Neuron instance must be asynchronous, but no callback was provided',
+            );
         }
 
         configuration.web3.eth.estimateGas(
@@ -553,7 +555,7 @@ describe('Mastery:', () => {
         configuration.provider.close(done);
     });
 
-    it('any address should be able to view the current Neuron master', done => 
+    it('any address should be able to view the current Neuron master', done =>
         getGasEstimateAndCall(
             configuration.neuronInstance.neuronMaster,
             configuration.account_addresses[1],
@@ -568,7 +570,7 @@ describe('Mastery:', () => {
             },
         ));
 
-    it('the current Neuron master should be able to hand off mastery to a new Neuron master', done => 
+    it('the current Neuron master should be able to hand off mastery to a new Neuron master', done =>
         getGasEstimateAndCall(
             configuration.neuronInstance.changeMastery,
             configuration.account_addresses[0],
@@ -618,7 +620,9 @@ describe('Mastery:', () => {
                     );
                 }
 
-                return done(new Error('Expected: error, actual: mastery successfully changed'));
+                return done(
+                    new Error('Expected: error, actual: mastery successfully changed'),
+                );
             },
         ));
 });
