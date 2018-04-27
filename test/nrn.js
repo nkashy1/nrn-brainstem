@@ -384,9 +384,47 @@ describe('ERC20 methods', () => {
 
                     return done(
                         new Error(
-                            'Expected: transfer unsuccessful, actual: transfer successful',
+                            `Expected: error, actual: success {$success}`
                         ),
                     );
+                },
+            );
+        });
+
+        it('should raise an error if an account attempts to send a negative amount', (done) => {
+            getGasEstimateAndCall(
+                configuration.neuronInstance.transfer,
+                configuration.account_addresses[0],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                -5,
+                (err, success) => {
+                    if (err) {
+                        return async.map(
+                            configuration.account_addresses,
+                            async.apply(
+                                getGasEstimateAndCall,
+                                configuration.neuronInstance.balanceOf,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                            ),
+                            (balancesErr, balances) => {
+                                if (balancesErr) {
+                                    return done(balancesErr);
+                                }
+
+                                assert.strictEqual(balances[0].toNumber(), 90);
+                                assert.strictEqual(balances[1].toNumber(), 10);
+                                balances
+                                    .slice(2)
+                                    .forEach(balance =>
+                                        assert.strictEqual(balance.toNumber(), 0));
+                                return done();
+                            },
+                        );
+                    }
+
+                    return done(new Error(`Expected: error, actual: success {$success}`));
                 },
             );
         });
