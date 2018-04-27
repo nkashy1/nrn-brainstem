@@ -6,10 +6,11 @@ pragma solidity ^0.4.21;
  */
 
 contract Neuron {
+    event StringValue(string value);
     // Neuron constructor
-    constructor(string name, string symbol, uint256 initialSupply) public {
-        name = name;
-        symbol = symbol;
+    constructor(string _name, string _symbol, uint256 initialSupply) public {
+        name = _name;
+        symbol = _symbol;
         neuronMaster = msg.sender;
         totalSupply = initialSupply;
         ledger[msg.sender] = initialSupply;
