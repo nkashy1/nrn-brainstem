@@ -18,4 +18,33 @@ The respository also includes tools that can be used to deploy these contracts t
 
 - - -
 
-## Deployment
+## Development
+
+### Requirements
+
++ [`node v9.11.1`](https://nodejs.org/en/blog/release/v9.11.1/) or later
+
++ [`yarn`](https://yarnpkg.com/en/) (although `npm` will probably suffice)
+
+
+### Getting set up
+
+Simply run:
+```
+yarn install
+```
+
+
+### Running tests
+
+From project root:
+
+```
+./node_modules/.bin/mocha
+```
+
+To run specific tests:
+
+```
+./node_modules/.bin/mocha <path to test>
+```
