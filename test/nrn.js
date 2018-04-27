@@ -90,7 +90,7 @@ function getGasEstimateAndCall(
     );
 }
 
-describe('NRN compilation', () => {
+describe('NRN compilation:', () => {
     it('should return no errors', (done) => {
         const errors = _.get(compilationResult, 'errors', []);
         assert.equal(errors.length, 0);
@@ -109,7 +109,7 @@ describe('NRN compilation', () => {
     });
 });
 
-describe('NRN construction', () => {
+describe('NRN construction:', () => {
     const configuration = {};
 
     before(() => {
@@ -192,7 +192,7 @@ describe('NRN construction', () => {
         ));
 });
 
-describe('ERC20 methods', () => {
+describe('ERC20 methods:', () => {
     const configuration = {};
 
     before((done) => {
@@ -310,7 +310,7 @@ describe('ERC20 methods', () => {
             },
         ));
 
-    describe('transfer', () => {
+    describe('transfer:', () => {
         it('should allow any account to send its own funds to any other account', (done) => {
             getGasEstimateAndCall(
                 configuration.neuronInstance.transfer,
@@ -387,7 +387,7 @@ describe('ERC20 methods', () => {
             );
         });
 
-        it('should raise an error if an account attempts to send a negative amount', (done) => {
+        it('should raise an error if an account attempts to send a negative amount', done =>
             getGasEstimateAndCall(
                 configuration.neuronInstance.transfer,
                 configuration.account_addresses[0],
@@ -422,7 +422,116 @@ describe('ERC20 methods', () => {
 
                     return done(new Error('Expected: error, actual: success {$success}'));
                 },
-            );
-        });
+            ));
+    });
+
+    describe('approve, allowance, transferFrom:', () => {
+        it('allowance should allow any account to check how much money any other account has allowed a third account to transfer on its behalf', done =>
+            getGasEstimateAndCall(
+                configuration.neuronInstance.allowance,
+                configuration.account_addresses[
+                    configuration.account_addresses.length - 1
+                ],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[0],
+                configuration.account_addresses[1],
+                (allowanceErr, allowance) => {
+                    if (allowanceErr) {
+                        return done(allowanceErr);
+                    }
+
+                    assert.strictEqual(allowance.toNumber(), 0);
+                    return done();
+                },
+            ));
+
+        it('approve should allow any account to approve another account to make transactions up to a given limit on its behalf, from its balance', done =>
+            getGasEstimateAndCall(
+                configuration.neuronInstance.approve,
+                configuration.account_addresses[0],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                10,
+                (approveErr, success) => {
+                    if (approveErr) {
+                        return done(approveErr);
+                    }
+
+                    if (!success) {
+                        return done(new Error(`Expected: success true, actual: success ${success}`));
+                    }
+
+                    return getGasEstimateAndCall(
+                        configuration.neuronInstance.allowance,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[0],
+                        configuration.account_addresses[1],
+                        (allowanceErr, allowance) => {
+                            if (allowanceErr) {
+                                return done(allowanceErr);
+                            }
+
+                            assert.strictEqual(allowance.toNumber(), 10);
+                            return done();
+                        },
+                    );
+                },
+            ));
+
+        it('transferFrom should allow any account with sufficient approval to transfer funds from one account to another account', done =>
+            getGasEstimateAndCall(
+                configuration.neuronInstance.transferFrom,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[0],
+                configuration.account_addresses[2],
+                7,
+                (transferErr, transferResult) => {
+                    if (transferErr) {
+                        return done(transferErr);
+                    }
+
+                    return getGasEstimateAndCall(
+                        configuration.neuronInstance.allowance,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[0],
+                        configuration.account_addresses[1],
+                        (allowanceErr, allowance) => {
+                            if (allowanceErr) {
+                                return done(allowanceErr);
+                            }
+
+                            assert.strictEqual(allowance.toNumber(), 3);
+
+                            // TODO(neeraj): Factor this out as a checkBalances function. Third time you've written this.
+                            return async.map(
+                                configuration.account_addresses,
+                                async.apply(
+                                    getGasEstimateAndCall,
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[0],
+                                    gasEstimate => 2 * gasEstimate,
+                                ),
+                                (balancesErr, balances) => {
+                                    if (balancesErr) {
+                                        return done(balancesErr);
+                                    }
+
+                                    assert.strictEqual(balances[0].toNumber(), 83);
+                                    assert.strictEqual(balances[1].toNumber(), 10);
+                                    assert.strictEqual(balances[2].toNumber(), 7)
+                                    balances
+                                        .slice(3)
+                                        .forEach(balance =>
+                                            assert.strictEqual(balance.toNumber(), 0));
+                                    return done();
+                                },
+                            );
+                        },
+                    );
+                },
+            ));
     });
 });
