@@ -53,19 +53,28 @@ function setUp(configuration) {
  * @param {string} fromAccount - String representing address which should make the method call
  * @param {Function} assignGas - Logic determining how to produce actual gas sent with method
  * call based on gas estimate, e.g. (gasEstimate) => 2*gasEstimate
- * @callback callback - Should behave exactly as callback to method call
+ * @param {...} rest - List of arguments to contract method, followed by callback
  */
-function getGasEstimateAndCall(contractMethod, fromAccount, assignGas, callback) {
-    return contractMethod.estimateGas((err, gasEstimate) => {
-        if (!!err) {
-            return callback(err);
-        }
+function getGasEstimateAndCall(contractMethod, fromAccount, assignGas, ...rest) {
+    let callback = rest[rest.length-1];
+    let contractMethodArguments = rest.slice(0,rest.length-1);
 
-        return contractMethod({
-            from: fromAccount,
-            gas: assignGas(gasEstimate)
-        }, callback);
-    });
+    return contractMethod.estimateGas(
+        ...contractMethodArguments,
+        (err, gasEstimate) => {
+            if (!!err) {
+                return callback(err);
+            }
+
+            return contractMethod(
+                ...contractMethodArguments,
+                {
+                    from: fromAccount,
+                    gas: assignGas(gasEstimate)
+                },
+                callback
+            );
+        });
 }
 
 describe('NRN compilation', () => {
@@ -230,6 +239,22 @@ describe('ERC20 methods', () => {
                 assert.strictEqual(results[0], 'Neuron');
                 assert.strictEqual(results[1], 'NRN');
                 done();
+            });
+    });
+
+    it('the balance of any address should be visible to any other address', (done) => {
+        return getGasEstimateAndCall(
+            configuration.neuronInstance.balanceOf,
+            configuration.account_addresses[configuration.account_addresses.length-1],
+            (gasEstimate) => 2*gasEstimate,
+            configuration.account_addresses[0],
+            (err, balance) => {
+                if (!!err) {
+                    return done(err);
+                }
+
+                assert.strictEqual(balance.toNumber(), 100);
+                return done();
             });
     });
 });
