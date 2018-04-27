@@ -34,7 +34,7 @@ const contractBytecode = _.get(compiledContract, 'bytecode');
  * @param {Object} configuration - Object that should be populated with the test configuration
  * parameters
  */
-function setUp(configuration) {
+function setUp(configuration, withNeuronInstance, done) {
     /* eslint-disable no-param-reassign */
     configuration.provider = Ganache.provider();
     configuration.accounts = _.get(configuration.provider, [
@@ -48,6 +48,54 @@ function setUp(configuration) {
     configuration.Neuron = configuration.web3.eth.contract(
         JSON.parse(_.get(compiledContract, 'interface')),
     );
+
+    if (withNeuronInstance) {
+        if (!done) {
+            throw new Error('Configuration with Neuron instance must be asynchronous, but no callback was provided');
+        }
+
+        configuration.web3.eth.estimateGas(
+            { data: contractBytecode },
+            (err, gasEstimate) => {
+                if (err) {
+                    return done(err);
+                }
+
+                // Some of the web3 contract methods (like new) make multiple calls to
+                // the provided callbacks. These callbacks represent different events.
+                // The `callInfo` object tracks the number of calls made to each
+                // callback.
+                const callInfo = {
+                    new: 0,
+                };
+
+                return configuration.Neuron.new(
+                    'Neuron',
+                    'NRN',
+                    100,
+                    {
+                        from: configuration.account_addresses[0],
+                        data: contractBytecode,
+                        gas: 2 * gasEstimate,
+                    },
+                    /* eslint-disable consistent-return */
+                    (creationErr, contractInstance) => {
+                        if (creationErr) {
+                            return done(creationErr);
+                        }
+
+                        callInfo.new += 1;
+
+                        if (callInfo.new === 2) {
+                            configuration.neuronInstance = contractInstance;
+                            return done();
+                        }
+                    },
+                    /* eslint-enable consistent-return */
+                );
+            },
+        );
+    }
     /* eslint-enable no-param-reassign */
 }
 
@@ -195,51 +243,7 @@ describe('NRN construction:', () => {
 describe('ERC20 methods:', () => {
     const configuration = {};
 
-    before((done) => {
-        setUp(configuration);
-
-        configuration.web3.eth.estimateGas(
-            { data: contractBytecode },
-            (err, gasEstimate) => {
-                if (err) {
-                    return done(err);
-                }
-
-                // Some of the web3 contract methods (like new) make multiple calls to
-                // the provided callbacks. These callbacks represent different events.
-                // The `callInfo` object tracks the number of calls made to each
-                // callback.
-                const callInfo = {
-                    new: 0,
-                };
-
-                return configuration.Neuron.new(
-                    'Neuron',
-                    'NRN',
-                    100,
-                    {
-                        from: configuration.account_addresses[0],
-                        data: contractBytecode,
-                        gas: 2 * gasEstimate,
-                    },
-                    /* eslint-disable consistent-return */
-                    (creationErr, contractInstance) => {
-                        if (creationErr) {
-                            return done(creationErr);
-                        }
-
-                        callInfo.new += 1;
-
-                        if (callInfo.new === 2) {
-                            configuration.neuronInstance = contractInstance;
-                            return done();
-                        }
-                    },
-                    /* eslint-enable consistent-return */
-                );
-            },
-        );
-    });
+    before(done => setUp(configuration, true, done));
 
     after((done) => {
         configuration.provider.close(done);
@@ -538,4 +542,83 @@ describe('ERC20 methods:', () => {
                 },
             ));
     });
+});
+
+describe('Mastery:', () => {
+    const configuration = {};
+
+    before(done => setUp(configuration, true, done));
+
+    after((done) => {
+        configuration.provider.close(done);
+    });
+
+    it('any address should be able to view the current Neuron master', done => 
+        getGasEstimateAndCall(
+            configuration.neuronInstance.neuronMaster,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            (err, master) => {
+                if (err) {
+                    return done(err);
+                }
+
+                assert.strictEqual(master, configuration.account_addresses[0]);
+                return done();
+            },
+        ));
+
+    it('the current Neuron master should be able to hand off mastery to a new Neuron master', done => 
+        getGasEstimateAndCall(
+            configuration.neuronInstance.changeMastery,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[1],
+            (changeErr) => {
+                if (changeErr) {
+                    return done(changeErr);
+                }
+
+                return getGasEstimateAndCall(
+                    configuration.neuronInstance.neuronMaster,
+                    configuration.account_addresses[0],
+                    gasEstimate => 2 * gasEstimate,
+                    (masterErr, master) => {
+                        if (masterErr) {
+                            return done(masterErr);
+                        }
+
+                        assert.strictEqual(master, configuration.account_addresses[1]);
+                        return done();
+                    },
+                );
+            },
+        ));
+
+    it('only the Neuron master should be able to change the mastery of a contract', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.changeMastery,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[0],
+            (changeErr) => {
+                if (changeErr) {
+                    return getGasEstimateAndCall(
+                        configuration.neuronInstance.neuronMaster,
+                        configuration.account_addresses[2],
+                        gasEstimate => 2 * gasEstimate,
+                        (masterErr, master) => {
+                            if (masterErr) {
+                                return done(masterErr);
+                            }
+
+                            assert.strictEqual(master, configuration.account_addresses[1]);
+                            return done();
+                        },
+                    );
+                }
+
+                return done(new Error('Expected: error, actual: mastery successfully changed'));
+            },
+        ));
 });
