@@ -458,7 +458,9 @@ describe('ERC20 methods:', () => {
                     }
 
                     if (!success) {
-                        return done(new Error(`Expected: success true, actual: success ${success}`));
+                        return done(
+                            new Error(`Expected: success true, actual: success ${success}`),
+                        );
                     }
 
                     return getGasEstimateAndCall(
@@ -505,7 +507,9 @@ describe('ERC20 methods:', () => {
 
                             assert.strictEqual(allowance.toNumber(), 3);
 
-                            // TODO(neeraj): Factor this out as a checkBalances function. Third time you've written this.
+                            // TODO(neeraj): Factor this out as a checkBalances function.
+                            // Third time you've written this.
+                            // New function should take an array of balances to check against.
                             return async.map(
                                 configuration.account_addresses,
                                 async.apply(
@@ -521,7 +525,7 @@ describe('ERC20 methods:', () => {
 
                                     assert.strictEqual(balances[0].toNumber(), 83);
                                     assert.strictEqual(balances[1].toNumber(), 10);
-                                    assert.strictEqual(balances[2].toNumber(), 7)
+                                    assert.strictEqual(balances[2].toNumber(), 7);
                                     balances
                                         .slice(3)
                                         .forEach(balance =>
