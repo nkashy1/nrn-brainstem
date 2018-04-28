@@ -52,7 +52,10 @@ const {
 console.log(`Compiling contract in ${contractFile}...`);
 const contract = fs.readFileSync(contractFile).toString();
 const compilationResult = solc.compile(contract);
-const compiledContract = _.get(compilationResult, ['contracts', `:${contractName}`]);
+const compiledContract = _.get(compilationResult, [
+    'contracts',
+    `:${contractName}`,
+]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
 console.log('Contract compilation complete!');
 
@@ -151,7 +154,9 @@ web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
 
                         if (!receipt) {
                             throw new Error(
-                                `Receipt not returned for transaction ${contractInstance.transactionHash}`,
+                                `Receipt not returned for transaction ${
+                                    contractInstance.transactionHash
+                                }`,
                             );
                         }
 
