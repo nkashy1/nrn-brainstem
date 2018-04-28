@@ -56,7 +56,7 @@ const contract = fs.readFileSync(contractFile).toString();
 const compilationResult = solc.compile(contract);
 const compiledContract = _.get(compilationResult, ['contracts', contractName]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
-console.log('Contract compilation complete!')
+console.log('Contract compilation complete!');
 
 // Set up web3 client
 console.log(`Creating web3 client with provider type: ${providerType}, provider: ${provider}...`)
