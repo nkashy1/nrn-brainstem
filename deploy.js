@@ -13,7 +13,7 @@ const yargs = require('yargs');
 
 yargs
     .usage(
-        '$0 [--provider-type {ipc|http|ws}] --provider <path-to-provider> --contract-file <path-to-solidity-file> --contract-name <name-of-conract> --sender-adress <address> [contract-arguments ...]',
+        '$0 [--provider-type {ipc|http|ws}] --provider <path-to-provider> --contract-file <path-to-solidity-file> --contract-name <name-of-contract> --sender-adress <address> [contract-arguments ...]',
     )
     .option('provider', {
         alias: 'p',
