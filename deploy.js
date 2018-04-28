@@ -130,7 +130,6 @@ web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
                 data: contractBytecode,
                 gas: gasAllocation,
             },
-            /* eslint-disable consistent-return */
             (creationErr, contractInstance) => {
                 if (creationErr) {
                     throw creationErr;
@@ -171,7 +170,6 @@ web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
                     },
                 );
             },
-            /* eslint-enable consistent-return */
         );
     });
 
