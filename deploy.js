@@ -5,7 +5,6 @@
  */
 
 const fs = require('fs');
-const Ganache = require('ganache-core');
 const _ = require('lodash');
 const readline = require('readline');
 const solc = require('solc');
@@ -25,7 +24,7 @@ yargs
         alias: 't',
         describe:
       'Type of provider that should be used to connect to ethereum-based node',
-        choices: ['ipc', 'http', 'ws', 'test'],
+        choices: ['ipc', 'http', 'ws'],
     })
     .option('contract-file', {
         alias: 'c',
@@ -49,17 +48,11 @@ const {
     senderAddress,
 } = yargs.argv;
 
-if (providerType !== 'test' && !provider) {
-    throw new Error(
-        `Passing provider type ${providerType} requires you to also pass a provider`,
-    );
-}
-
 // Contract compilation
 console.log(`Compiling contract in ${contractFile}...`);
 const contract = fs.readFileSync(contractFile).toString();
 const compilationResult = solc.compile(contract);
-const compiledContract = _.get(compilationResult, ['contracts', contractName]);
+const compiledContract = _.get(compilationResult, ['contracts', `:${contractName}`]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
 console.log('Contract compilation complete!');
 
@@ -76,8 +69,6 @@ const web3Providers = {
 function makeClient(clientProvider, clientProviderType) {
     if (!clientProviderType) {
         return new Web3(clientProvider);
-    } else if (clientProviderType === 'test') {
-        return new Web3(Ganache.provider());
     }
 
     return new Web3(new web3Providers[clientProviderType](clientProvider));
@@ -109,46 +100,75 @@ web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
 
     let gasAllocation = gasEstimate;
 
-    rl.on('line', (line) => {
+    rl.once('line', (line) => {
         const trimmedLine = line.trim();
 
-        if (!trimmedLine) {
-            rl.close();
-        } else {
+        if (trimmedLine) {
             try {
                 gasAllocation = parseInt(line.trim(), 10);
             } catch (e) {
                 console.error(`Error: could not parse ${trimmedLine} as an integer`);
-                rl.close();
                 process.exit(1);
             }
         }
+
+        rl.close();
     });
 
-    const web3Contract = web3.eth.contract(
-        JSON.parse(_.get(compiledContract, 'interface')),
-    );
+    rl.on('close', () => {
+        const web3Contract = web3.eth.contract(
+            JSON.parse(_.get(compiledContract, 'interface')),
+        );
 
-    return web3Contract.new(
-        ...yargs.argv._,
-        {
-            from: senderAddress,
-            data: contractBytecode,
-            gas: gasAllocation,
-        },
-        /* eslint-disable consistent-return */
-        (creationErr, contractInstance) => {
-            if (creationErr) {
-                throw creationErr;
-            }
+        return web3Contract.new(
+            ...yargs.argv._,
+            {
+                from: senderAddress,
+                data: contractBytecode,
+                gas: gasAllocation,
+            },
+            /* eslint-disable consistent-return */
+            (creationErr, contractInstance) => {
+                if (creationErr) {
+                    throw creationErr;
+                }
 
-            if (contractInstance.address) {
+                if (!contractInstance.address) {
+                    return console.log(
+                        `Creation transaction: ${contractInstance.transactionHash}`,
+                    );
+                }
+
                 console.log(
                     `Contract successfully created: ${contractInstance.address}`,
                 );
-                process.exit(0);
-            }
-        },
-        /* eslint-enable consistent-return */
-    );
+                return web3.eth.getTransactionReceipt(
+                    contractInstance.transactionHash,
+                    (receiptErr, receipt) => {
+                        if (receiptErr) {
+                            throw receiptErr;
+                        }
+
+                        if (!receipt) {
+                            throw new Error(
+                                `Receipt not returned for transaction ${contractInstance.transactionHash}`,
+                            );
+                        }
+
+                        console.log(`Gas used: ${receipt.gasUsed}`);
+                        console.log(`Transaction status: ${receipt.status}`);
+                        console.log('Transaction logs:');
+                        receipt.logs.forEach((log) => {
+                            console.log(`\t${log}`);
+                        });
+
+                        process.exit(0);
+                    },
+                );
+            },
+            /* eslint-enable consistent-return */
+        );
+    });
+
+    return rl.prompt();
 });
