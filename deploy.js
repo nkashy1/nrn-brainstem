@@ -16,42 +16,30 @@ yargs
     .usage(
         '$0 --provider {ipc|http|ws|test} --provider <path-to-provider> --contract-file <path-to-solidity-file> --contract-name <name-of-conract> --sender-adress <address> [contract-arguments...]',
     )
-    .option(
-        'provider',
-        {
-            alias: 'p',
-            describe: 'Resource descriptor for provider: path to IPC socket, or HTTP or websocket URI',
-        },
-    )
-    .option(
-        'provider-type',
-        {
-            alias: 't',
-            describe: 'Type of provider that should be used to connect to ethereum-based node',
-            choices: ['ipc', 'http', 'ws', 'test'],
-        },
-    )
-    .option(
-        'contract-file',
-        {
-            alias: 'c',
-            describe: 'Path to file containing the solidity smart contract',
-        },
-    )
-    .option(
-        'contract-name',
-        {
-            alias: 'n',
-            describe: 'Name of contract from contract file that you would like to deploy',
-        },
-    )
-    .option(
-        'sender-address',
-        {
-            alias: 's',
-            describe: 'Address of contract creator',
-        },
-    );
+    .option('provider', {
+        alias: 'p',
+        describe:
+      'Resource descriptor for provider: path to IPC socket, or HTTP or websocket URI',
+    })
+    .option('provider-type', {
+        alias: 't',
+        describe:
+      'Type of provider that should be used to connect to ethereum-based node',
+        choices: ['ipc', 'http', 'ws', 'test'],
+    })
+    .option('contract-file', {
+        alias: 'c',
+        describe: 'Path to file containing the solidity smart contract',
+    })
+    .option('contract-name', {
+        alias: 'n',
+        describe:
+      'Name of contract from contract file that you would like to deploy',
+    })
+    .option('sender-address', {
+        alias: 's',
+        describe: 'Address of contract creator',
+    });
 
 const {
     contractFile,
@@ -62,7 +50,9 @@ const {
 } = yargs.argv;
 
 if (providerType !== 'test' && !provider) {
-    throw new Error(`Passing provider type ${providerType} requires you to also pass a provider`);
+    throw new Error(
+        `Passing provider type ${providerType} requires you to also pass a provider`,
+    );
 }
 
 // Contract compilation
@@ -74,7 +64,9 @@ const contractBytecode = _.get(compiledContract, 'bytecode');
 console.log('Contract compilation complete!');
 
 // Set up web3 client
-console.log(`Creating web3 client with provider type: ${providerType}, provider: ${provider}...`);
+console.log(
+    `Creating web3 client with provider type: ${providerType}, provider: ${provider}...`,
+);
 const web3Providers = {
     ipc: Web3.providers.IpcProvider,
     http: Web3.providers.HttpProvider,
@@ -104,60 +96,59 @@ console.log('Web3 client ready!');
  * This part is asynchronous
  */
 console.log('Deploying contract...');
-web3.eth.estimateGas(
-    { data: contractBytecode },
-    (err, gasEstimate) => {
-        if (err) {
-            throw err;
-        }
+web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
+    if (err) {
+        throw err;
+    }
 
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-            prompt: `Gas estimate: ${gasEstimate}. Hit ENTER if you would like to allocate that much gas, or enter a custom amount: `,
-        });
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: `Gas estimate: ${gasEstimate}. Hit ENTER if you would like to allocate that much gas, or enter a custom amount: `,
+    });
 
-        let gasAllocation = gasEstimate;
+    let gasAllocation = gasEstimate;
 
-        rl.on('line', (line) => {
-            const trimmedLine = line.trim();
+    rl.on('line', (line) => {
+        const trimmedLine = line.trim();
 
-            if (!trimmedLine) {
+        if (!trimmedLine) {
+            rl.close();
+        } else {
+            try {
+                gasAllocation = parseInt(line.trim(), 10);
+            } catch (e) {
+                console.error(`Error: could not parse ${trimmedLine} as an integer`);
                 rl.close();
-            } else {
-                try {
-                    gasAllocation = parseInt(line.trim(), 10);
-                } catch (e) {
-                    console.error(`Error: could not parse ${trimmedLine} as an integer`);
-                    rl.close();
-                    process.exit(1);
-                }
+                process.exit(1);
             }
-        });
+        }
+    });
 
-        const web3Contract = web3.eth.contract(
-            JSON.parse(_.get(compiledContract, 'interface')),
-        );
+    const web3Contract = web3.eth.contract(
+        JSON.parse(_.get(compiledContract, 'interface')),
+    );
 
-        return web3Contract.new(
-            ...yargs.argv._,
-            {
-                from: senderAddress,
-                data: contractBytecode,
-                gas: gasAllocation,
-            },
-            /* eslint-disable consistent-return */
-            (creationErr, contractInstance) => {
-                if (creationErr) {
-                    throw creationErr;
-                }
+    return web3Contract.new(
+        ...yargs.argv._,
+        {
+            from: senderAddress,
+            data: contractBytecode,
+            gas: gasAllocation,
+        },
+        /* eslint-disable consistent-return */
+        (creationErr, contractInstance) => {
+            if (creationErr) {
+                throw creationErr;
+            }
 
-                if (contractInstance.address) {
-                    console.log(`Contract successfully created: ${contractInstance.address}`);
-                    process.exit(0);
-                }
-            },
-            /* eslint-enable consistent-return */
-        );
-    },
-);
+            if (contractInstance.address) {
+                console.log(
+                    `Contract successfully created: ${contractInstance.address}`,
+                );
+                process.exit(0);
+            }
+        },
+        /* eslint-enable consistent-return */
+    );
+});
