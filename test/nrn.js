@@ -455,6 +455,42 @@ describe('ERC20 methods:', () => {
                     );
                 },
             ));
+
+        it('transferFrom should not allow an account with insufficient approval to transfer funds from one account to another account', done =>
+            getGasEstimateAndCall(
+                configuration.neuronInstance.transferFrom,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[0],
+                configuration.account_addresses[2],
+                5,
+                (transferErr, transferResult) => {
+                    if (transferErr) {
+                        return getGasEstimateAndCall(
+                            configuration.neuronInstance.allowance,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[0],
+                            configuration.account_addresses[1],
+                            (allowanceErr, allowance) => {
+                                if (allowanceErr) {
+                                    return done(allowanceErr);
+                                }
+
+                                assert.strictEqual(allowance.toNumber(), 3);
+
+                                return checkBalances(
+                                    configuration,
+                                    [83, 10, 7, 0, 0, 0, 0, 0, 0, 0],
+                                    done,
+                                );
+                            },
+                        );
+                    }
+
+                    return done(new Error('Expected: error, actual: transferResult {$transferResult}'));
+                },
+            ));
     });
 });
 
@@ -544,7 +580,7 @@ describe('increaseSupply and decreaseSupply', () => {
 
     /**
      * For the setup of this test case, the contract owner (configuration.account_addresses[0])
-     * transfers half of its wealth to configuration.account_addresses[1] at the outset.
+     * transfers 50 tokens to configuration.account_addresses[1] at the outset.
      */
     before(done => setUp(configuration, true, (err) => {
         if (err) {
@@ -762,6 +798,128 @@ describe('increaseSupply and decreaseSupply', () => {
                 return done(
                     new Error('Expected: error, actual: decreaseSupply concluded with no error'),
                 );
+            },
+        ));
+});
+
+describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBalanceFrom', () => {
+    const configuration = {};
+
+    /**
+     * For the setup of this test case, the contract owner (configuration.account_addresses[0])
+     * transfers 50 tokens to configuration.account_addresses[1] at the outset.
+     *
+     * configuration.account_addresses[1] then raises the allowance for
+     * configuration.account_addresses[2] against its account to 30.
+     *
+     * configuration.account_addresses[3] also deploys a new instance of the Neuron contract
+     */
+    before(done => setUp(configuration, true, (err) => {
+        if (err) {
+            return done(err);
+        }
+
+        return async.parallel([
+            function prepareOldContract(callback) {
+                getGasEstimateAndCall(
+                    configuration.neuronInstance.transfer,
+                    configuration.account_addresses[0],
+                    gasEstimate => 2 * gasEstimate,
+                    configuration.account_addresses[1],
+                    50,
+                    (transferErr, transferResult) => {
+                        if (transferErr) {
+                            return callback(transferErr);
+                        }
+
+                        if (!transferResult) {
+                            return callback(
+                                new Error(`Transfer unsuccessful: ${transferResult}`),
+                            );
+                        }
+
+                        return getGasEstimateAndCall(
+                            configuration.neuronInstance.approve,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[2],
+                            30,
+                            (approvalErr, approvalResult) => {
+                                if (approvalErr) {
+                                    return callback(approvalErr);
+                                }
+
+                                if (!approvalResult) {
+                                    return callback(
+                                        new Error(`Approval unsuccessful: ${approvalResult}`),
+                                    );
+                                }
+
+                                return callback();
+                            },
+                        );
+                    },
+                );
+            },
+            function prepareNewContract(callback) {
+                configuration.web3.eth.estimateGas(
+                    { data: contractBytecode },
+                    (estimationErr, gasEstimate) => {
+                        if (estimationErr) {
+                            return callback(estimationErr);
+                        }
+
+                        const callInfo = {
+                            new: 0,
+                        };
+
+                        return configuration.Neuron.new(
+                            'Neuron',
+                            'NRN',
+                            100,
+                            {
+                                from: configuration.account_addresses[3],
+                                data: contractBytecode,
+                                gas: 2 * gasEstimate,
+                            },
+                            /* eslint-disable consistent-return */
+                            (creationErr, contractInstance) => {
+                                if (creationErr) {
+                                    return callback(creationErr);
+                                }
+
+                                callInfo.new += 1;
+
+                                if (callInfo.new === 2) {
+                                    configuration.newNeuronInstance = contractInstance;
+                                    return callback();
+                                }
+                            },
+                            /* eslint-enable consistent-return */
+                        );
+                    },
+                );
+            },
+        ], done);
+    }));
+
+    after((done) => {
+        configuration.provider.close(done);
+    });
+
+    it('a new contract instance should not refer to any old contracts in its reclamationWhitelist', done =>
+        getGasEstimateAndCall(
+            configuration.newNeuronInstance.reclamationWhitelist,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.neuronInstance.address,
+            (viewErr, oldContractInWhitelist) => {
+                if (viewErr) {
+                    return done(viewErr);
+                }
+
+                assert(!oldContractInWhitelist);
+                return done();
             },
         ));
 });
