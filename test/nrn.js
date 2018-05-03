@@ -1,5 +1,6 @@
 const assert = require('assert');
 const async = require('async');
+const checkBalances = require('./checkBalances.js');
 const fs = require('fs');
 const Ganache = require('ganache-core');
 const getGasEstimateAndCall = require('../getGasEstimateAndCall.js');
@@ -330,27 +331,10 @@ describe('ERC20 methods:', () => {
                 20,
                 (transferErr, success) => {
                     if (transferErr) {
-                        return async.map(
-                            configuration.account_addresses,
-                            async.apply(
-                                getGasEstimateAndCall,
-                                configuration.neuronInstance.balanceOf,
-                                configuration.account_addresses[0],
-                                gasEstimate => 2 * gasEstimate,
-                            ),
-                            (balancesErr, balances) => {
-                                if (balancesErr) {
-                                    return done(balancesErr);
-                                }
-
-                                assert.strictEqual(balances[0].toNumber(), 90);
-                                assert.strictEqual(balances[1].toNumber(), 10);
-                                balances
-                                    .slice(2)
-                                    .forEach(balance =>
-                                        assert.strictEqual(balance.toNumber(), 0));
-                                return done();
-                            },
+                        return checkBalances(
+                            configuration,
+                            [90, 10, 0, 0, 0, 0, 0, 0, 0, 0],
+                            done,
                         );
                     }
 
@@ -368,27 +352,10 @@ describe('ERC20 methods:', () => {
                 -5,
                 (err, success) => {
                     if (err) {
-                        return async.map(
-                            configuration.account_addresses,
-                            async.apply(
-                                getGasEstimateAndCall,
-                                configuration.neuronInstance.balanceOf,
-                                configuration.account_addresses[0],
-                                gasEstimate => 2 * gasEstimate,
-                            ),
-                            (balancesErr, balances) => {
-                                if (balancesErr) {
-                                    return done(balancesErr);
-                                }
-
-                                assert.strictEqual(balances[0].toNumber(), 90);
-                                assert.strictEqual(balances[1].toNumber(), 10);
-                                balances
-                                    .slice(2)
-                                    .forEach(balance =>
-                                        assert.strictEqual(balance.toNumber(), 0));
-                                return done();
-                            },
+                        return checkBalances(
+                            configuration,
+                            [90, 10, 0, 0, 0, 0, 0, 0, 0, 0],
+                            done,
                         );
                     }
 
@@ -479,31 +446,10 @@ describe('ERC20 methods:', () => {
 
                             assert.strictEqual(allowance.toNumber(), 3);
 
-                            // TODO(neeraj): Factor this out as a checkBalances function.
-                            // Third time you've written this.
-                            // New function should take an array of balances to check against.
-                            return async.map(
-                                configuration.account_addresses,
-                                async.apply(
-                                    getGasEstimateAndCall,
-                                    configuration.neuronInstance.balanceOf,
-                                    configuration.account_addresses[0],
-                                    gasEstimate => 2 * gasEstimate,
-                                ),
-                                (balancesErr, balances) => {
-                                    if (balancesErr) {
-                                        return done(balancesErr);
-                                    }
-
-                                    assert.strictEqual(balances[0].toNumber(), 83);
-                                    assert.strictEqual(balances[1].toNumber(), 10);
-                                    assert.strictEqual(balances[2].toNumber(), 7);
-                                    balances
-                                        .slice(3)
-                                        .forEach(balance =>
-                                            assert.strictEqual(balance.toNumber(), 0));
-                                    return done();
-                                },
+                            return checkBalances(
+                                configuration,
+                                [83, 10, 7, 0, 0, 0, 0, 0, 0, 0],
+                                done,
                             );
                         },
                     );
