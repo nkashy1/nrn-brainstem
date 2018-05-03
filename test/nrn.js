@@ -592,3 +592,230 @@ describe('Mastery:', () => {
             },
         ));
 });
+
+describe('increaseSupply and decreaseSupply', () => {
+    const configuration = {};
+
+    /**
+     * For the setup of this test case, the contract owner (configuration.account_addresses[0])
+     * transfers half of its wealth to configuration.account_addresses[1] at the outset.
+     */
+    before(done => setUp(configuration, true, (err) => {
+        if (err) {
+            return done(err);
+        }
+
+        return getGasEstimateAndCall(
+            configuration.neuronInstance.transfer,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[1],
+            50,
+            done,
+        );
+    }));
+
+    after((done) => {
+        configuration.provider.close(done);
+    });
+
+    it('the neuron master should be able to increase supply, with the new tokens being credited to their account', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.increaseSupply,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            17,
+            (increaseErr) => {
+                if (increaseErr) {
+                    return done(increaseErr);
+                }
+
+                return async.parallel([
+                    callback => getGasEstimateAndCall(
+                        configuration.neuronInstance.balanceOf,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[0],
+                        callback,
+                    ),
+                    callback => getGasEstimateAndCall(
+                        configuration.neuronInstance.totalSupply,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        callback,
+                    ),
+                ], (verificationErr, results) => {
+                    if (verificationErr) {
+                        return done(verificationErr);
+                    }
+
+                    const [balance, totalSupply] = results;
+
+                    assert.strictEqual(balance.toNumber(), 67);
+                    assert.strictEqual(totalSupply.toNumber(), 117);
+                    return done();
+                });
+            },
+        ));
+
+    it('the neuron master should be able to decrease the supply, with the difference in supply being erased from their account', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.decreaseSupply,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            17,
+            (decreaseErr) => {
+                if (decreaseErr) {
+                    return done(decreaseErr);
+                }
+                return async.parallel([
+                    callback => getGasEstimateAndCall(
+                        configuration.neuronInstance.balanceOf,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[0],
+                        callback,
+                    ),
+                    callback => getGasEstimateAndCall(
+                        configuration.neuronInstance.totalSupply,
+                        configuration.account_addresses[0],
+                        gasEstimate => 2 * gasEstimate,
+                        callback,
+                    ),
+                ], (verificationErr, results) => {
+                    if (verificationErr) {
+                        return done(verificationErr);
+                    }
+
+                    const [balance, totalSupply] = results;
+
+                    assert.strictEqual(balance.toNumber(), 50);
+                    assert.strictEqual(totalSupply.toNumber(), 100);
+                    return done();
+                });
+            },
+        ));
+
+    it('the neuron master should not be able to decrease supply in excess of their wealth', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.decreaseSupply,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            101,
+            (decreaseErr) => {
+                if (decreaseErr) {
+                    return async.parallel([
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.balanceOf,
+                            configuration.account_addresses[0],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[0],
+                            callback,
+                        ),
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.totalSupply,
+                            configuration.account_addresses[0],
+                            gasEstimate => 2 * gasEstimate,
+                            callback,
+                        ),
+                    ], (verificationErr, results) => {
+                        if (verificationErr) {
+                            return done(verificationErr);
+                        }
+
+                        const [balance, totalSupply] = results;
+
+                        assert.strictEqual(balance.toNumber(), 50);
+                        assert.strictEqual(totalSupply.toNumber(), 100);
+                        return done();
+                    });
+                }
+
+                return done(
+                    new Error('Expected: error, actual: decreaseSupply concluded with no error'),
+                );
+            },
+        ));
+
+    it('no one but the neuron master should be able to increase supply', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.increaseSupply,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            1,
+            (increaseErr) => {
+                if (increaseErr) {
+                    return async.parallel([
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.balanceOf,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[1],
+                            callback,
+                        ),
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.totalSupply,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            callback,
+                        ),
+                    ], (verificationErr, results) => {
+                        if (verificationErr) {
+                            return done(verificationErr);
+                        }
+
+                        const [balance, totalSupply] = results;
+
+                        assert.strictEqual(balance.toNumber(), 50);
+                        assert.strictEqual(totalSupply.toNumber(), 100);
+                        return done();
+                    });
+                }
+
+                return done(
+                    new Error('Expected: error, actual: increaseSupply concluded with no error'),
+                );
+            },
+        ));
+
+    it('no one but the neuron master should be able to decrease supply', done =>
+        getGasEstimateAndCall(
+            configuration.neuronInstance.decreaseSupply,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            1,
+            (increaseErr) => {
+                if (increaseErr) {
+                    return async.parallel([
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.balanceOf,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[1],
+                            callback,
+                        ),
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.totalSupply,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            callback,
+                        ),
+                    ], (verificationErr, results) => {
+                        if (verificationErr) {
+                            return done(verificationErr);
+                        }
+
+                        const [balance, totalSupply] = results;
+
+                        assert.strictEqual(balance.toNumber(), 50);
+                        assert.strictEqual(totalSupply.toNumber(), 100);
+                        return done();
+                    });
+                }
+
+                return done(
+                    new Error('Expected: error, actual: decreaseSupply concluded with no error'),
+                );
+            },
+        ));
+});
