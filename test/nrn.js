@@ -1,3 +1,14 @@
+/**
+ * This file contains tests for the NRN smart contract available in ../src/nrn.sol.
+ *
+ * The file is rather large, but you can easily find the tests for a particular smart contract
+ * method by searching for that method in the file.
+ *
+ * If you find this not to be the case for a particular method, please consider either modifying
+ * the test description or adding a comment in the appropriate location so as to make the above
+ * statement true. Pull requests are very welcome!
+ */
+
 const assert = require('assert');
 const async = require('async');
 const checkBalances = require('./checkBalances.js');
