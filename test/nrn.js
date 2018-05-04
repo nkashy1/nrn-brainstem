@@ -488,7 +488,11 @@ describe('ERC20 methods:', () => {
                         );
                     }
 
-                    return done(new Error('Expected: error, actual: transferResult {$transferResult}'));
+                    return done(
+                        new Error(
+                            'Expected: error, actual: transferResult {$transferResult}',
+                        ),
+                    );
                 },
             ));
     });
@@ -579,23 +583,24 @@ describe('increaseSupply and decreaseSupply', () => {
     const configuration = {};
 
     /**
-     * For the setup of this test case, the contract owner (configuration.account_addresses[0])
-     * transfers 50 tokens to configuration.account_addresses[1] at the outset.
-     */
-    before(done => setUp(configuration, true, (err) => {
-        if (err) {
-            return done(err);
-        }
+   * For the setup of this test case, the contract owner (configuration.account_addresses[0])
+   * transfers 50 tokens to configuration.account_addresses[1] at the outset.
+   */
+    before(done =>
+        setUp(configuration, true, (err) => {
+            if (err) {
+                return done(err);
+            }
 
-        return getGasEstimateAndCall(
-            configuration.neuronInstance.transfer,
-            configuration.account_addresses[0],
-            gasEstimate => 2 * gasEstimate,
-            configuration.account_addresses[1],
-            50,
-            done,
-        );
-    }));
+            return getGasEstimateAndCall(
+                configuration.neuronInstance.transfer,
+                configuration.account_addresses[0],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                50,
+                done,
+            );
+        }));
 
     after((done) => {
         configuration.provider.close(done);
@@ -612,31 +617,36 @@ describe('increaseSupply and decreaseSupply', () => {
                     return done(increaseErr);
                 }
 
-                return async.parallel([
-                    callback => getGasEstimateAndCall(
-                        configuration.neuronInstance.balanceOf,
-                        configuration.account_addresses[0],
-                        gasEstimate => 2 * gasEstimate,
-                        configuration.account_addresses[0],
-                        callback,
-                    ),
-                    callback => getGasEstimateAndCall(
-                        configuration.neuronInstance.totalSupply,
-                        configuration.account_addresses[0],
-                        gasEstimate => 2 * gasEstimate,
-                        callback,
-                    ),
-                ], (verificationErr, results) => {
-                    if (verificationErr) {
-                        return done(verificationErr);
-                    }
+                return async.parallel(
+                    [
+                        callback =>
+                            getGasEstimateAndCall(
+                                configuration.neuronInstance.balanceOf,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                                configuration.account_addresses[0],
+                                callback,
+                            ),
+                        callback =>
+                            getGasEstimateAndCall(
+                                configuration.neuronInstance.totalSupply,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                                callback,
+                            ),
+                    ],
+                    (verificationErr, results) => {
+                        if (verificationErr) {
+                            return done(verificationErr);
+                        }
 
-                    const [balance, totalSupply] = results;
+                        const [balance, totalSupply] = results;
 
-                    assert.strictEqual(balance.toNumber(), 67);
-                    assert.strictEqual(totalSupply.toNumber(), 117);
-                    return done();
-                });
+                        assert.strictEqual(balance.toNumber(), 67);
+                        assert.strictEqual(totalSupply.toNumber(), 117);
+                        return done();
+                    },
+                );
             },
         ));
 
@@ -650,31 +660,36 @@ describe('increaseSupply and decreaseSupply', () => {
                 if (decreaseErr) {
                     return done(decreaseErr);
                 }
-                return async.parallel([
-                    callback => getGasEstimateAndCall(
-                        configuration.neuronInstance.balanceOf,
-                        configuration.account_addresses[0],
-                        gasEstimate => 2 * gasEstimate,
-                        configuration.account_addresses[0],
-                        callback,
-                    ),
-                    callback => getGasEstimateAndCall(
-                        configuration.neuronInstance.totalSupply,
-                        configuration.account_addresses[0],
-                        gasEstimate => 2 * gasEstimate,
-                        callback,
-                    ),
-                ], (verificationErr, results) => {
-                    if (verificationErr) {
-                        return done(verificationErr);
-                    }
+                return async.parallel(
+                    [
+                        callback =>
+                            getGasEstimateAndCall(
+                                configuration.neuronInstance.balanceOf,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                                configuration.account_addresses[0],
+                                callback,
+                            ),
+                        callback =>
+                            getGasEstimateAndCall(
+                                configuration.neuronInstance.totalSupply,
+                                configuration.account_addresses[0],
+                                gasEstimate => 2 * gasEstimate,
+                                callback,
+                            ),
+                    ],
+                    (verificationErr, results) => {
+                        if (verificationErr) {
+                            return done(verificationErr);
+                        }
 
-                    const [balance, totalSupply] = results;
+                        const [balance, totalSupply] = results;
 
-                    assert.strictEqual(balance.toNumber(), 50);
-                    assert.strictEqual(totalSupply.toNumber(), 100);
-                    return done();
-                });
+                        assert.strictEqual(balance.toNumber(), 50);
+                        assert.strictEqual(totalSupply.toNumber(), 100);
+                        return done();
+                    },
+                );
             },
         ));
 
@@ -686,35 +701,42 @@ describe('increaseSupply and decreaseSupply', () => {
             101,
             (decreaseErr) => {
                 if (decreaseErr) {
-                    return async.parallel([
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.balanceOf,
-                            configuration.account_addresses[0],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[0],
-                            callback,
-                        ),
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.totalSupply,
-                            configuration.account_addresses[0],
-                            gasEstimate => 2 * gasEstimate,
-                            callback,
-                        ),
-                    ], (verificationErr, results) => {
-                        if (verificationErr) {
-                            return done(verificationErr);
-                        }
+                    return async.parallel(
+                        [
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[0],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.account_addresses[0],
+                                    callback,
+                                ),
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.totalSupply,
+                                    configuration.account_addresses[0],
+                                    gasEstimate => 2 * gasEstimate,
+                                    callback,
+                                ),
+                        ],
+                        (verificationErr, results) => {
+                            if (verificationErr) {
+                                return done(verificationErr);
+                            }
 
-                        const [balance, totalSupply] = results;
+                            const [balance, totalSupply] = results;
 
-                        assert.strictEqual(balance.toNumber(), 50);
-                        assert.strictEqual(totalSupply.toNumber(), 100);
-                        return done();
-                    });
+                            assert.strictEqual(balance.toNumber(), 50);
+                            assert.strictEqual(totalSupply.toNumber(), 100);
+                            return done();
+                        },
+                    );
                 }
 
                 return done(
-                    new Error('Expected: error, actual: decreaseSupply concluded with no error'),
+                    new Error(
+                        'Expected: error, actual: decreaseSupply concluded with no error',
+                    ),
                 );
             },
         ));
@@ -727,35 +749,42 @@ describe('increaseSupply and decreaseSupply', () => {
             1,
             (increaseErr) => {
                 if (increaseErr) {
-                    return async.parallel([
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.balanceOf,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[1],
-                            callback,
-                        ),
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.totalSupply,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            callback,
-                        ),
-                    ], (verificationErr, results) => {
-                        if (verificationErr) {
-                            return done(verificationErr);
-                        }
+                    return async.parallel(
+                        [
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.account_addresses[1],
+                                    callback,
+                                ),
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.totalSupply,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    callback,
+                                ),
+                        ],
+                        (verificationErr, results) => {
+                            if (verificationErr) {
+                                return done(verificationErr);
+                            }
 
-                        const [balance, totalSupply] = results;
+                            const [balance, totalSupply] = results;
 
-                        assert.strictEqual(balance.toNumber(), 50);
-                        assert.strictEqual(totalSupply.toNumber(), 100);
-                        return done();
-                    });
+                            assert.strictEqual(balance.toNumber(), 50);
+                            assert.strictEqual(totalSupply.toNumber(), 100);
+                            return done();
+                        },
+                    );
                 }
 
                 return done(
-                    new Error('Expected: error, actual: increaseSupply concluded with no error'),
+                    new Error(
+                        'Expected: error, actual: increaseSupply concluded with no error',
+                    ),
                 );
             },
         ));
@@ -768,35 +797,42 @@ describe('increaseSupply and decreaseSupply', () => {
             1,
             (increaseErr) => {
                 if (increaseErr) {
-                    return async.parallel([
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.balanceOf,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[1],
-                            callback,
-                        ),
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.totalSupply,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            callback,
-                        ),
-                    ], (verificationErr, results) => {
-                        if (verificationErr) {
-                            return done(verificationErr);
-                        }
+                    return async.parallel(
+                        [
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.account_addresses[1],
+                                    callback,
+                                ),
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.totalSupply,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    callback,
+                                ),
+                        ],
+                        (verificationErr, results) => {
+                            if (verificationErr) {
+                                return done(verificationErr);
+                            }
 
-                        const [balance, totalSupply] = results;
+                            const [balance, totalSupply] = results;
 
-                        assert.strictEqual(balance.toNumber(), 50);
-                        assert.strictEqual(totalSupply.toNumber(), 100);
-                        return done();
-                    });
+                            assert.strictEqual(balance.toNumber(), 50);
+                            assert.strictEqual(totalSupply.toNumber(), 100);
+                            return done();
+                        },
+                    );
                 }
 
                 return done(
-                    new Error('Expected: error, actual: decreaseSupply concluded with no error'),
+                    new Error(
+                        'Expected: error, actual: decreaseSupply concluded with no error',
+                    ),
                 );
             },
         ));
@@ -806,77 +842,81 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
     const configuration = {};
 
     /**
-     * For the setup of this test case, the contract owner (configuration.account_addresses[0])
-     * transfers 50 tokens to configuration.account_addresses[1] at the outset.
-     *
-     * configuration.account_addresses[1] then raises the allowance for
-     * configuration.account_addresses[2] against its account to 30.
-     *
-     * configuration.account_addresses[3] also deploys a new instance of the Neuron contract
-     */
-    before(done => setUp(configuration, true, (err) => {
-        if (err) {
-            return done(err);
-        }
+   * For the setup of this test case, the contract owner (configuration.account_addresses[0])
+   * transfers 50 tokens to configuration.account_addresses[1] at the outset.
+   *
+   * configuration.account_addresses[1] then raises the allowance for
+   * configuration.account_addresses[2] against its account to 30.
+   *
+   * configuration.account_addresses[3] also deploys a new instance of the Neuron contract
+   */
+    before(done =>
+        setUp(configuration, true, (err) => {
+            if (err) {
+                return done(err);
+            }
 
-        return async.parallel([
-            function prepareOldContract(callback) {
-                getGasEstimateAndCall(
-                    configuration.neuronInstance.transfer,
-                    configuration.account_addresses[0],
-                    gasEstimate => 2 * gasEstimate,
-                    configuration.account_addresses[1],
-                    50,
-                    (transferErr, transferResult) => {
-                        if (transferErr) {
-                            return callback(transferErr);
-                        }
-
-                        if (!transferResult) {
-                            return callback(
-                                new Error(`Transfer unsuccessful: ${transferResult}`),
-                            );
-                        }
-
-                        return callback();
-                    },
-                );
-            },
-            function prepareNewContract(callback) {
-                configuration.web3.eth.estimateGas(
-                    { data: contractBytecode },
-                    (estimationErr, gasEstimate) => {
-                        if (estimationErr) {
-                            return callback(estimationErr);
-                        }
-
-                        return configuration.Neuron.new(
-                            'Neuron',
-                            'NRN',
-                            100,
-                            {
-                                from: configuration.account_addresses[0],
-                                data: contractBytecode,
-                                gas: 2 * gasEstimate,
-                            },
-                            /* eslint-disable consistent-return */
-                            (creationErr, newContractInstance) => {
-                                if (creationErr) {
-                                    return callback(creationErr);
+            return async.parallel(
+                [
+                    function prepareOldContract(callback) {
+                        getGasEstimateAndCall(
+                            configuration.neuronInstance.transfer,
+                            configuration.account_addresses[0],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[1],
+                            50,
+                            (transferErr, transferResult) => {
+                                if (transferErr) {
+                                    return callback(transferErr);
                                 }
 
-                                if (newContractInstance.address) {
-                                    configuration.newNeuronInstance = newContractInstance;
-                                    return callback();
+                                if (!transferResult) {
+                                    return callback(
+                                        new Error(`Transfer unsuccessful: ${transferResult}`),
+                                    );
                                 }
+
+                                return callback();
                             },
-                            /* eslint-enable consistent-return */
                         );
                     },
-                );
-            },
-        ], done);
-    }));
+                    function prepareNewContract(callback) {
+                        configuration.web3.eth.estimateGas(
+                            { data: contractBytecode },
+                            (estimationErr, gasEstimate) => {
+                                if (estimationErr) {
+                                    return callback(estimationErr);
+                                }
+
+                                return configuration.Neuron.new(
+                                    'Neuron',
+                                    'NRN',
+                                    100,
+                                    {
+                                        from: configuration.account_addresses[0],
+                                        data: contractBytecode,
+                                        gas: 2 * gasEstimate,
+                                    },
+                                    /* eslint-disable consistent-return */
+                                    (creationErr, newContractInstance) => {
+                                        if (creationErr) {
+                                            return callback(creationErr);
+                                        }
+
+                                        if (newContractInstance.address) {
+                                            configuration.newNeuronInstance = newContractInstance;
+                                            return callback();
+                                        }
+                                    },
+                                    /* eslint-enable consistent-return */
+                                );
+                            },
+                        );
+                    },
+                ],
+                done,
+            );
+        }));
 
     after((done) => {
         configuration.provider.close(done);
@@ -922,7 +962,11 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                     );
                 }
 
-                return done(new Error(`Expected: error, actual: whitelisting result ${whitelistResult}`));
+                return done(
+                    new Error(
+                        `Expected: error, actual: whitelisting result ${whitelistResult}`,
+                    ),
+                );
             },
         ));
 
@@ -976,173 +1020,194 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
             25,
             (reclamationErr, reclamationResult) => {
                 if (reclamationErr) {
-                    return async.parallel([
-                        callback => getGasEstimateAndCall(
-                            configuration.newNeuronInstance.balanceOf,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[1],
-                            (balanceErr, balance) => {
-                                if (balanceErr) {
-                                    return callback(balanceErr);
-                                }
+                    return async.parallel(
+                        [
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.newNeuronInstance.balanceOf,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.account_addresses[1],
+                                    (balanceErr, balance) => {
+                                        if (balanceErr) {
+                                            return callback(balanceErr);
+                                        }
 
-                                assert.strictEqual(balance.toNumber(), 0);
-                                return callback();
-                            },
-                        ),
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.balanceOf,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[1],
-                            (balanceErr, balance) => {
-                                if (balanceErr) {
-                                    return callback(balanceErr);
-                                }
+                                        assert.strictEqual(balance.toNumber(), 0);
+                                        return callback();
+                                    },
+                                ),
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.account_addresses[1],
+                                    (balanceErr, balance) => {
+                                        if (balanceErr) {
+                                            return callback(balanceErr);
+                                        }
 
-                                assert.strictEqual(balance.toNumber(), 50);
-                                return callback();
-                            },
-                        ),
-                        callback => getGasEstimateAndCall(
-                            configuration.neuronInstance.balanceOf,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.newNeuronInstance.address,
-                            (balanceErr, balance) => {
-                                if (balanceErr) {
-                                    return callback(balanceErr);
-                                }
+                                        assert.strictEqual(balance.toNumber(), 50);
+                                        return callback();
+                                    },
+                                ),
+                            callback =>
+                                getGasEstimateAndCall(
+                                    configuration.neuronInstance.balanceOf,
+                                    configuration.account_addresses[1],
+                                    gasEstimate => 2 * gasEstimate,
+                                    configuration.newNeuronInstance.address,
+                                    (balanceErr, balance) => {
+                                        if (balanceErr) {
+                                            return callback(balanceErr);
+                                        }
 
-                                assert.strictEqual(balance.toNumber(), 0);
-                                return callback();
-                            },
-                        ),
-                    ], done);
+                                        assert.strictEqual(balance.toNumber(), 0);
+                                        return callback();
+                                    },
+                                ),
+                        ],
+                        done,
+                    );
                 }
 
-                return done(new Error(`Expected: error, actual: reclamation result ${reclamationResult}`));
+                return done(
+                    new Error(
+                        `Expected: error, actual: reclamation result ${reclamationResult}`,
+                    ),
+                );
             },
         ));
 
     it('reclaimBalanceFrom: should succeed if the reclaimer has authorized the new contract to transfer the reclaimed amount on the old contract', done =>
-        async.series([
-            // configuration.account_addresses[1] approves new Neuron instance to make transfers
-            // on its behalf on the old Neuron instance to the amount of 49 tokens
-            callback => getGasEstimateAndCall(
-                configuration.neuronInstance.approve,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.newNeuronInstance.address,
-                49,
-                (approvalErr, approvalResult) => {
-                    if (approvalErr) {
-                        return callback(approvalErr);
-                    }
+        async.series(
+            [
+                // configuration.account_addresses[1] approves new Neuron instance to make transfers
+                // on its behalf on the old Neuron instance to the amount of 49 tokens
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.neuronInstance.approve,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.newNeuronInstance.address,
+                        49,
+                        (approvalErr, approvalResult) => {
+                            if (approvalErr) {
+                                return callback(approvalErr);
+                            }
 
-                    assert(approvalResult);
-                    return callback();
-                },
-            ),
-            // configuration.account_addresses[1] reclaims 48 tokens from the old Neuron instance
-            callback => getGasEstimateAndCall(
-                configuration.newNeuronInstance.reclaimBalanceFrom,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.neuronInstance.address,
-                configuration.account_addresses[1],
-                48,
-                (reclamationErr, reclamationResult) => {
-                    if (reclamationErr) {
-                        return callback(reclamationErr);
-                    }
+                            assert(approvalResult);
+                            return callback();
+                        },
+                    ),
+                // configuration.account_addresses[1] reclaims 48 tokens from the old Neuron
+                // instance
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.newNeuronInstance.reclaimBalanceFrom,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.neuronInstance.address,
+                        configuration.account_addresses[1],
+                        48,
+                        (reclamationErr, reclamationResult) => {
+                            if (reclamationErr) {
+                                return callback(reclamationErr);
+                            }
 
-                    assert(reclamationResult);
-                    return callback();
-                },
-            ),
-            // This means that the ledger on the old Neuron instance should reflect that
-            // configuration.account_addresses[1] now has 2 tokens (which is 48 less than) it had
-            // at the outset
-            callback => getGasEstimateAndCall(
-                configuration.neuronInstance.balanceOf,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.account_addresses[1],
-                (balanceErr, balance) => {
-                    if (balanceErr) {
-                        return callback(balanceErr);
-                    }
+                            assert(reclamationResult);
+                            return callback();
+                        },
+                    ),
+                // This means that the ledger on the old Neuron instance should reflect that
+                // configuration.account_addresses[1] now has 2 tokens (which is 48 less than) it
+                // had at the outset
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.neuronInstance.balanceOf,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[1],
+                        (balanceErr, balance) => {
+                            if (balanceErr) {
+                                return callback(balanceErr);
+                            }
 
-                    assert.strictEqual(balance.toNumber(), 2);
-                    return callback();
-                },
-            ),
-            // The 48 tokens that were reclaimed should now appear IN THE OLD CONTRACT as belonging
-            // to the new contract
-            callback => getGasEstimateAndCall(
-                configuration.neuronInstance.balanceOf,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.newNeuronInstance.address,
-                (balanceErr, balance) => {
-                    if (balanceErr) {
-                        return callback(balanceErr);
-                    }
+                            assert.strictEqual(balance.toNumber(), 2);
+                            return callback();
+                        },
+                    ),
+                // The 48 tokens that were reclaimed should now appear IN THE OLD CONTRACT as
+                // belonging to the new contract
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.neuronInstance.balanceOf,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.newNeuronInstance.address,
+                        (balanceErr, balance) => {
+                            if (balanceErr) {
+                                return callback(balanceErr);
+                            }
 
-                    assert.strictEqual(balance.toNumber(), 48);
-                    return callback();
-                },
-            ),
-            // The allowance of the new contract on behalf of configuration.account_addresses[1]
-            // ON THE OLD CONTRACT should also be updated to reflect the tokens that have been
-            // transferred
-            callback => getGasEstimateAndCall(
-                configuration.neuronInstance.allowance,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.account_addresses[1],
-                configuration.newNeuronInstance.address,
-                (allowanceErr, allowance) => {
-                    if (allowanceErr) {
-                        return callback(allowanceErr);
-                    }
+                            assert.strictEqual(balance.toNumber(), 48);
+                            return callback();
+                        },
+                    ),
+                // The allowance of the new contract on behalf of configuration.account_addresses[1]
+                // ON THE OLD CONTRACT should also be updated to reflect the tokens that have been
+                // transferred
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.neuronInstance.allowance,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[1],
+                        configuration.newNeuronInstance.address,
+                        (allowanceErr, allowance) => {
+                            if (allowanceErr) {
+                                return callback(allowanceErr);
+                            }
 
-                    assert.strictEqual(allowance.toNumber(), 1);
-                    return callback();
-                },
-            ),
-            // configuration.account_addresses[1] should now have a balance of 48 tokens, which
-            // is 48 tokens more than it used to have, on the new contract
-            callback => getGasEstimateAndCall(
-                configuration.newNeuronInstance.balanceOf,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                configuration.account_addresses[1],
-                (balanceErr, balance) => {
-                    if (balanceErr) {
-                        return callback(balanceErr);
-                    }
+                            assert.strictEqual(allowance.toNumber(), 1);
+                            return callback();
+                        },
+                    ),
+                // configuration.account_addresses[1] should now have a balance of 48 tokens, which
+                // is 48 tokens more than it used to have, on the new contract
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.newNeuronInstance.balanceOf,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.account_addresses[1],
+                        (balanceErr, balance) => {
+                            if (balanceErr) {
+                                return callback(balanceErr);
+                            }
 
-                    assert.strictEqual(balance.toNumber(), 48);
-                    return callback();
-                },
-            ),
-            // The total supply on the new contract should now be 148, which is 48 more than it
-            // had been before this reclamation
-            callback => getGasEstimateAndCall(
-                configuration.newNeuronInstance.totalSupply,
-                configuration.account_addresses[1],
-                gasEstimate => 2 * gasEstimate,
-                (supplyErr, supply) => {
-                    if (supplyErr) {
-                        return callback(supplyErr);
-                    }
+                            assert.strictEqual(balance.toNumber(), 48);
+                            return callback();
+                        },
+                    ),
+                // The total supply on the new contract should now be 148, which is 48 more than it
+                // had been before this reclamation
+                callback =>
+                    getGasEstimateAndCall(
+                        configuration.newNeuronInstance.totalSupply,
+                        configuration.account_addresses[1],
+                        gasEstimate => 2 * gasEstimate,
+                        (supplyErr, supply) => {
+                            if (supplyErr) {
+                                return callback(supplyErr);
+                            }
 
-                    assert.strictEqual(supply.toNumber(), 148);
-                    return callback();
-                },
-            ),
-        ], done));
+                            assert.strictEqual(supply.toNumber(), 148);
+                            return callback();
+                        },
+                    ),
+            ],
+            done,
+        ));
 });
