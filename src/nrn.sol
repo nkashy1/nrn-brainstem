@@ -135,7 +135,7 @@ contract Neuron {
     
     // Whitelist functionality to define which contracts balance can be reclaimed from
     mapping(address => bool) public reclamationWhitelist;
-    
+
     function whitelistContractForReclamation(Neuron oldNeuron) public returns (bool) {
         require(hasMastery(msg.sender));
         reclamationWhitelist[address(oldNeuron)] = true;

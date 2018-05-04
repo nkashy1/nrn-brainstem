@@ -838,26 +838,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                             );
                         }
 
-                        return getGasEstimateAndCall(
-                            configuration.neuronInstance.approve,
-                            configuration.account_addresses[1],
-                            gasEstimate => 2 * gasEstimate,
-                            configuration.account_addresses[2],
-                            30,
-                            (approvalErr, approvalResult) => {
-                                if (approvalErr) {
-                                    return callback(approvalErr);
-                                }
-
-                                if (!approvalResult) {
-                                    return callback(
-                                        new Error(`Approval unsuccessful: ${approvalResult}`),
-                                    );
-                                }
-
-                                return callback();
-                            },
-                        );
+                        return callback();
                     },
                 );
             },
@@ -869,29 +850,23 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                             return callback(estimationErr);
                         }
 
-                        const callInfo = {
-                            new: 0,
-                        };
-
                         return configuration.Neuron.new(
                             'Neuron',
                             'NRN',
                             100,
                             {
-                                from: configuration.account_addresses[3],
+                                from: configuration.account_addresses[0],
                                 data: contractBytecode,
                                 gas: 2 * gasEstimate,
                             },
                             /* eslint-disable consistent-return */
-                            (creationErr, contractInstance) => {
+                            (creationErr, newContractInstance) => {
                                 if (creationErr) {
                                     return callback(creationErr);
                                 }
 
-                                callInfo.new += 1;
-
-                                if (callInfo.new === 2) {
-                                    configuration.newNeuronInstance = contractInstance;
+                                if (newContractInstance.address) {
+                                    configuration.newNeuronInstance = newContractInstance;
                                     return callback();
                                 }
                             },
@@ -907,7 +882,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
         configuration.provider.close(done);
     });
 
-    it('a new contract instance should not refer to any old contracts in its reclamationWhitelist', done =>
+    it('reclamationWhitelist: a new contract instance should not refer to any old contracts in its reclamationWhitelist', done =>
         getGasEstimateAndCall(
             configuration.newNeuronInstance.reclamationWhitelist,
             configuration.account_addresses[0],
@@ -922,4 +897,252 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 return done();
             },
         ));
+
+    it('whitelistContractForReclamation: no one but the neuron master should be able to add a contract address to the whitelist', done =>
+        getGasEstimateAndCall(
+            configuration.newNeuronInstance.whitelistContractForReclamation,
+            configuration.account_addresses[3],
+            gasEstimate => 2 * gasEstimate,
+            configuration.neuronInstance.address,
+            (whitelistErr, whitelistResult) => {
+                if (whitelistErr) {
+                    return getGasEstimateAndCall(
+                        configuration.newNeuronInstance.reclamationWhitelist,
+                        configuration.account_addresses[3],
+                        gasEstimate => 2 * gasEstimate,
+                        configuration.neuronInstance.address,
+                        (viewErr, oldContractInWhitelist) => {
+                            if (viewErr) {
+                                return done(viewErr);
+                            }
+
+                            assert(!oldContractInWhitelist);
+                            return done();
+                        },
+                    );
+                }
+
+                return done(new Error(`Expected: error, actual: whitelisting result ${whitelistResult}`));
+            },
+        ));
+
+    // Todo(nkashy1): Investigate why this whitelistContractForReclamation errors out if
+    // newNeuronInstance was created by a separate account (configuration.account_addresses[3]
+    // originally). This may be a bug in setUp or in prepareNewContract in the before callback.
+    // Less likely: bug in ganache-core.
+    // Context: Initially, prepareNewContract was created by configuration.account_addresses[3],
+    // but the require(hasMastery(msg.sender)) in the whitelistContractForReclamation call was
+    // causing a reversion although neuronMaster was still being recognized as the right account.
+    // Removing this requirement (and therefore making the whitelistContractForReclamation method
+    // publicly callable) caused the following test (appropriately modified with the right sender
+    // address) to pass.
+    it('whitelistContractForReclamation: the neuron master should be able to add a contract address to the whitelist', done =>
+        getGasEstimateAndCall(
+            configuration.newNeuronInstance.whitelistContractForReclamation,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.neuronInstance.address,
+            (whitelistErr, whitelistResult) => {
+                if (whitelistErr) {
+                    return done(whitelistErr);
+                }
+
+                assert(whitelistResult);
+
+                return getGasEstimateAndCall(
+                    configuration.newNeuronInstance.reclamationWhitelist,
+                    configuration.account_addresses[0],
+                    gasEstimate => 2 * gasEstimate,
+                    configuration.neuronInstance.address,
+                    (viewErr, oldContractInWhitelist) => {
+                        if (viewErr) {
+                            return done(viewErr);
+                        }
+
+                        assert(oldContractInWhitelist);
+                        return done();
+                    },
+                );
+            },
+        ));
+
+    it('reclaimBalanceFrom: should fail if the reclaimer has not authorized the new contract to transfer the reclaimed amount on the old contract', done =>
+        getGasEstimateAndCall(
+            configuration.newNeuronInstance.reclaimBalanceFrom,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            configuration.neuronInstance.address,
+            configuration.account_addresses[1],
+            25,
+            (reclamationErr, reclamationResult) => {
+                if (reclamationErr) {
+                    return async.parallel([
+                        callback => getGasEstimateAndCall(
+                            configuration.newNeuronInstance.balanceOf,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[1],
+                            (balanceErr, balance) => {
+                                if (balanceErr) {
+                                    return callback(balanceErr);
+                                }
+
+                                assert.strictEqual(balance.toNumber(), 0);
+                                return callback();
+                            },
+                        ),
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.balanceOf,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.account_addresses[1],
+                            (balanceErr, balance) => {
+                                if (balanceErr) {
+                                    return callback(balanceErr);
+                                }
+
+                                assert.strictEqual(balance.toNumber(), 50);
+                                return callback();
+                            },
+                        ),
+                        callback => getGasEstimateAndCall(
+                            configuration.neuronInstance.balanceOf,
+                            configuration.account_addresses[1],
+                            gasEstimate => 2 * gasEstimate,
+                            configuration.newNeuronInstance.address,
+                            (balanceErr, balance) => {
+                                if (balanceErr) {
+                                    return callback(balanceErr);
+                                }
+
+                                assert.strictEqual(balance.toNumber(), 0);
+                                return callback();
+                            },
+                        ),
+                    ], done);
+                }
+
+                return done(new Error(`Expected: error, actual: reclamation result ${reclamationResult}`));
+            },
+        ));
+
+    it('reclaimBalanceFrom: should succeed if the reclaimer has authorized the new contract to transfer the reclaimed amount on the old contract', done =>
+        async.series([
+            // configuration.account_addresses[1] approves new Neuron instance to make transfers
+            // on its behalf on the old Neuron instance to the amount of 49 tokens
+            callback => getGasEstimateAndCall(
+                configuration.neuronInstance.approve,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.newNeuronInstance.address,
+                49,
+                (approvalErr, approvalResult) => {
+                    if (approvalErr) {
+                        return callback(approvalErr);
+                    }
+
+                    assert(approvalResult);
+                    return callback();
+                },
+            ),
+            // configuration.account_addresses[1] reclaims 48 tokens from the old Neuron instance
+            callback => getGasEstimateAndCall(
+                configuration.newNeuronInstance.reclaimBalanceFrom,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.neuronInstance.address,
+                configuration.account_addresses[1],
+                48,
+                (reclamationErr, reclamationResult) => {
+                    if (reclamationErr) {
+                        return callback(reclamationErr);
+                    }
+
+                    assert(reclamationResult);
+                    return callback();
+                },
+            ),
+            // This means that the ledger on the old Neuron instance should reflect that
+            // configuration.account_addresses[1] now has 2 tokens (which is 48 less than) it had
+            // at the outset
+            callback => getGasEstimateAndCall(
+                configuration.neuronInstance.balanceOf,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                (balanceErr, balance) => {
+                    if (balanceErr) {
+                        return callback(balanceErr);
+                    }
+
+                    assert.strictEqual(balance.toNumber(), 2);
+                    return callback();
+                },
+            ),
+            // The 48 tokens that were reclaimed should now appear IN THE OLD CONTRACT as belonging
+            // to the new contract
+            callback => getGasEstimateAndCall(
+                configuration.neuronInstance.balanceOf,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.newNeuronInstance.address,
+                (balanceErr, balance) => {
+                    if (balanceErr) {
+                        return callback(balanceErr);
+                    }
+
+                    assert.strictEqual(balance.toNumber(), 48);
+                    return callback();
+                },
+            ),
+            // The allowance of the new contract on behalf of configuration.account_addresses[1]
+            // ON THE OLD CONTRACT should also be updated to reflect the tokens that have been
+            // transferred
+            callback => getGasEstimateAndCall(
+                configuration.neuronInstance.allowance,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                configuration.newNeuronInstance.address,
+                (allowanceErr, allowance) => {
+                    if (allowanceErr) {
+                        return callback(allowanceErr);
+                    }
+
+                    assert.strictEqual(allowance.toNumber(), 1);
+                    return callback();
+                },
+            ),
+            // configuration.account_addresses[1] should now have a balance of 48 tokens, which
+            // is 48 tokens more than it used to have, on the new contract
+            callback => getGasEstimateAndCall(
+                configuration.newNeuronInstance.balanceOf,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[1],
+                (balanceErr, balance) => {
+                    if (balanceErr) {
+                        return callback(balanceErr);
+                    }
+
+                    assert.strictEqual(balance.toNumber(), 48);
+                    return callback();
+                },
+            ),
+            // The total supply on the new contract should now be 148, which is 48 more than it
+            // had been before this reclamation
+            callback => getGasEstimateAndCall(
+                configuration.newNeuronInstance.totalSupply,
+                configuration.account_addresses[1],
+                gasEstimate => 2 * gasEstimate,
+                (supplyErr, supply) => {
+                    if (supplyErr) {
+                        return callback(supplyErr);
+                    }
+
+                    assert.strictEqual(supply.toNumber(), 148);
+                    return callback();
+                },
+            ),
+        ], done));
 });
