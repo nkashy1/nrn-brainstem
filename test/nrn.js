@@ -12,18 +12,16 @@
 const assert = require('assert');
 const async = require('async');
 const checkBalances = require('./checkBalances.js');
-const fs = require('fs');
+const compile = require('../compile.js');
 const Ganache = require('ganache-core');
 const getGasEstimateAndCall = require('../getGasEstimateAndCall.js');
 const _ = require('lodash');
 const path = require('path');
-const solc = require('solc');
 const Web3 = require('web3');
 
 const contractFile = path.resolve(__dirname, '../src/nrn.sol');
-const contract = fs.readFileSync(contractFile).toString();
-const compilationResult = solc.compile(contract);
-const compiledContract = _.get(compilationResult, ['contracts', ':Neuron']);
+const compilationResult = compile(contractFile);
+const compiledContract = _.get(compilationResult, ['contracts', `${contractFile}:Neuron`]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
 
 /**
