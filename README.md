@@ -40,11 +40,11 @@ yarn install
 From project root:
 
 ```
-./node_modules/.bin/mocha
+yarn test
 ```
 
 To run specific tests:
 
 ```
-./node_modules/.bin/mocha <path to test>
+yarn test <path to test>
 ```
