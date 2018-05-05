@@ -7,6 +7,9 @@
   "author": "Neeraj Kashyap <neeraj@doc.ai>",
   "license": "Apache-2.0",
   "private": true,
+  "scripts": {
+    "test": "./node_modules/.bin/mocha"
+  },
   "dependencies": {
     "async": "^2.6.0",
     "lodash": "^4.17.10",
