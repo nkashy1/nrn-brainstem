@@ -4,12 +4,12 @@ const getGasEstimateAndCall = require('../getGasEstimateAndCall.js');
 const _ = require('lodash');
 
 /**
- * checkBalances is an asynchronous function which accepts a configuration object (nrn-brainstem
+ * checkBalances is an asynchronous function which accepts a configuration object (stem-brainstem
  * test fixture) and an array of integer target balances. It ensures that each of the accounts in
  * the configuration (in order) has the corresponding balance (from the balances array) in the
- * Neuron contract instance specified by configuration.neuronInstance.
+ * Stem contract instance specified by configuration.stemInstance.
  *
- * @param {Object} configuration - nrn-brainstem test fixture (see any test for definition)
+ * @param {Object} configuration - stem-brainstem test fixture (see any test for definition)
  * @param {int[]} targetBalances - array of balances of length no greater than the number of
  * accounts in configuration; if it is of smaller length k, then the tests are only applied to the
  * first k accounts
@@ -20,7 +20,7 @@ function checkBalances(configuration, targetBalances, done) {
         configuration.account_addresses,
         async.apply(
             getGasEstimateAndCall,
-            configuration.neuronInstance.balanceOf,
+            configuration.stemInstance.balanceOf,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
         ),

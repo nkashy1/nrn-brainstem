@@ -1,5 +1,5 @@
 /**
- * This file contains tests for the NRN smart contract available in ../src/nrn.sol.
+ * This file contains tests for the STM smart contract available in ../src/stem.sol.
  *
  * The file is rather large, but you can easily find the tests for a particular smart contract
  * method by searching for that method in the file.
@@ -19,9 +19,9 @@ const _ = require('lodash');
 const path = require('path');
 const Web3 = require('web3');
 
-const contractFile = path.resolve(__dirname, '../src/nrn.sol');
+const contractFile = path.resolve(__dirname, '../src/stem.sol');
 const compilationResult = compile(contractFile);
-const compiledContract = _.get(compilationResult, ['contracts', `${contractFile}:Neuron`]);
+const compiledContract = _.get(compilationResult, ['contracts', `${contractFile}:Stem`]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
 
 /**
@@ -38,18 +38,18 @@ const contractBytecode = _.get(compiledContract, 'bytecode');
  * 1. accounts - list of (unlocked) account objects available as part of the scenario
  * 2. account_addresses - list of addresses for each of the accounts (in the same order
  * as the list of accounts)
- * 3. Neuron - Neuron contract object
+ * 3. Stem - Stem contract object
  * 4. provider - RPC provider (in this case, we are using a ganache-core Provider object)
  * 5. web3 - web3 client object
  *
  * @param {Object} configuration - Object that should be populated with the test configuration
  * parameters
- * @param {boolean} withNeuronInstance - If true, signifies that caller wants this function to
- * set up the text fixture with an instance of the Neuron contract (under the neuronInstance
+ * @param {boolean} withStemInstance - If true, signifies that caller wants this function to
+ * set up the text fixture with an instance of the Stem contract (under the stemInstance
  * key
- * @param {callback} done - This callback must only be provided if `withNeuronInstance` is true
+ * @param {callback} done - This callback must only be provided if `withStemInstance` is true
  */
-function setUp(configuration, withNeuronInstance, done) {
+function setUp(configuration, withStemInstance, done) {
     /* eslint-disable no-param-reassign */
     configuration.provider = Ganache.provider();
     configuration.accounts = _.get(configuration.provider, [
@@ -60,14 +60,14 @@ function setUp(configuration, withNeuronInstance, done) {
     configuration.account_addresses = Object.keys(configuration.accounts);
     configuration.web3 = new Web3();
     configuration.web3.setProvider(configuration.provider);
-    configuration.Neuron = configuration.web3.eth.contract(
+    configuration.Stem = configuration.web3.eth.contract(
         JSON.parse(_.get(compiledContract, 'interface')),
     );
 
-    if (withNeuronInstance) {
+    if (withStemInstance) {
         if (!done) {
             throw new Error(
-                'Configuration with Neuron instance must be asynchronous, but no callback was provided',
+                'Configuration with Stem instance must be asynchronous, but no callback was provided',
             );
         }
 
@@ -86,9 +86,9 @@ function setUp(configuration, withNeuronInstance, done) {
                     new: 0,
                 };
 
-                return configuration.Neuron.new(
-                    'Neuron',
-                    'NRN',
+                return configuration.Stem.new(
+                    'Stem',
+                    'STM',
                     100,
                     {
                         from: configuration.account_addresses[0],
@@ -104,7 +104,7 @@ function setUp(configuration, withNeuronInstance, done) {
                         callInfo.new += 1;
 
                         if (callInfo.new === 2) {
-                            configuration.neuronInstance = contractInstance;
+                            configuration.stemInstance = contractInstance;
                             return done();
                         }
                     },
@@ -116,7 +116,7 @@ function setUp(configuration, withNeuronInstance, done) {
     /* eslint-enable no-param-reassign */
 }
 
-describe('NRN compilation:', () => {
+describe('STM compilation:', () => {
     it('should return no errors', (done) => {
         const errors = _.get(compilationResult, 'errors', []);
         assert.equal(errors.length, 0);
@@ -129,13 +129,13 @@ describe('NRN compilation:', () => {
         done();
     });
 
-    it('should produce bytecode for the Neuron contract', (done) => {
+    it('should produce bytecode for the Stem contract', (done) => {
         assert(!!contractBytecode);
         done();
     });
 });
 
-describe('NRN construction:', () => {
+describe('STM construction:', () => {
     const configuration = {};
 
     before(() => {
@@ -162,9 +162,9 @@ describe('NRN construction:', () => {
                     new: 0,
                 };
 
-                return configuration.Neuron.new(
-                    'Neuron',
-                    'NRN',
+                return configuration.Stem.new(
+                    'Stem',
+                    'STM',
                     100,
                     {
                         from: configuration.account_addresses[0],
@@ -197,9 +197,9 @@ describe('NRN construction:', () => {
                     return done(err);
                 }
 
-                return configuration.Neuron.new(
-                    'Neuron',
-                    'NRN',
+                return configuration.Stem.new(
+                    'Stem',
+                    'STM',
                     100,
                     {
                         from: configuration.account_addresses[0],
@@ -228,12 +228,12 @@ describe('ERC20 methods:', () => {
     });
 
     it('testSupply should be callable by anyone and return the total amount of the token in circulation', (done) => {
-        configuration.neuronInstance.totalSupply.estimateGas((err, gasEstimate) => {
+        configuration.stemInstance.totalSupply.estimateGas((err, gasEstimate) => {
             if (err) {
                 return done(err);
             }
 
-            return configuration.neuronInstance.totalSupply(
+            return configuration.stemInstance.totalSupply(
                 {
                     from:
             configuration.account_addresses[
@@ -255,7 +255,7 @@ describe('ERC20 methods:', () => {
 
     it('the name and symbol of the token should be visible to anyone', (done) => {
         const methods = ['name', 'symbol'].map(k =>
-            async.apply(getGasEstimateAndCall, configuration.neuronInstance[k]));
+            async.apply(getGasEstimateAndCall, configuration.stemInstance[k]));
         return async.applyEach(
             methods,
             configuration.account_addresses[
@@ -267,8 +267,8 @@ describe('ERC20 methods:', () => {
                     return done(err);
                 }
 
-                assert.strictEqual(results[0], 'Neuron');
-                assert.strictEqual(results[1], 'NRN');
+                assert.strictEqual(results[0], 'Stem');
+                assert.strictEqual(results[1], 'STM');
                 return done();
             },
         );
@@ -276,7 +276,7 @@ describe('ERC20 methods:', () => {
 
     it('the balance of any address should be visible to any other address', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.balanceOf,
+            configuration.stemInstance.balanceOf,
             configuration.account_addresses[
                 configuration.account_addresses.length - 1
             ],
@@ -295,7 +295,7 @@ describe('ERC20 methods:', () => {
     describe('transfer:', () => {
         it('should allow any account to send its own funds to any other account', (done) => {
             getGasEstimateAndCall(
-                configuration.neuronInstance.transfer,
+                configuration.stemInstance.transfer,
                 configuration.account_addresses[0],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[1],
@@ -314,7 +314,7 @@ describe('ERC20 methods:', () => {
                     }
 
                     return getGasEstimateAndCall(
-                        configuration.neuronInstance.balanceOf,
+                        configuration.stemInstance.balanceOf,
                         configuration.account_addresses[0],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[1],
@@ -333,7 +333,7 @@ describe('ERC20 methods:', () => {
 
         it('should raise an error if an account attempts to send more of its own fund than it controls to any other account', (done) => {
             getGasEstimateAndCall(
-                configuration.neuronInstance.transfer,
+                configuration.stemInstance.transfer,
                 configuration.account_addresses[1],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[0],
@@ -354,7 +354,7 @@ describe('ERC20 methods:', () => {
 
         it('should raise an error if an account attempts to send a negative amount', done =>
             getGasEstimateAndCall(
-                configuration.neuronInstance.transfer,
+                configuration.stemInstance.transfer,
                 configuration.account_addresses[0],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[1],
@@ -376,7 +376,7 @@ describe('ERC20 methods:', () => {
     describe('approve, allowance, transferFrom:', () => {
         it('allowance should allow any account to check how much money any other account has allowed a third account to transfer on its behalf', done =>
             getGasEstimateAndCall(
-                configuration.neuronInstance.allowance,
+                configuration.stemInstance.allowance,
                 configuration.account_addresses[
                     configuration.account_addresses.length - 1
                 ],
@@ -395,7 +395,7 @@ describe('ERC20 methods:', () => {
 
         it('approve should allow any account to approve another account to make transactions up to a given limit on its behalf, from its balance', done =>
             getGasEstimateAndCall(
-                configuration.neuronInstance.approve,
+                configuration.stemInstance.approve,
                 configuration.account_addresses[0],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[1],
@@ -412,7 +412,7 @@ describe('ERC20 methods:', () => {
                     }
 
                     return getGasEstimateAndCall(
-                        configuration.neuronInstance.allowance,
+                        configuration.stemInstance.allowance,
                         configuration.account_addresses[0],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[0],
@@ -431,7 +431,7 @@ describe('ERC20 methods:', () => {
 
         it('transferFrom should allow any account with sufficient approval to transfer funds from one account to another account', done =>
             getGasEstimateAndCall(
-                configuration.neuronInstance.transferFrom,
+                configuration.stemInstance.transferFrom,
                 configuration.account_addresses[1],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[0],
@@ -443,7 +443,7 @@ describe('ERC20 methods:', () => {
                     }
 
                     return getGasEstimateAndCall(
-                        configuration.neuronInstance.allowance,
+                        configuration.stemInstance.allowance,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[0],
@@ -467,7 +467,7 @@ describe('ERC20 methods:', () => {
 
         it('transferFrom should not allow an account with insufficient approval to transfer funds from one account to another account', done =>
             getGasEstimateAndCall(
-                configuration.neuronInstance.transferFrom,
+                configuration.stemInstance.transferFrom,
                 configuration.account_addresses[1],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[0],
@@ -476,7 +476,7 @@ describe('ERC20 methods:', () => {
                 (transferErr, transferResult) => {
                     if (transferErr) {
                         return getGasEstimateAndCall(
-                            configuration.neuronInstance.allowance,
+                            configuration.stemInstance.allowance,
                             configuration.account_addresses[1],
                             gasEstimate => 2 * gasEstimate,
                             configuration.account_addresses[0],
@@ -516,9 +516,9 @@ describe('Mastery:', () => {
         configuration.provider.close(done);
     });
 
-    it('any address should be able to view the current Neuron master', done =>
+    it('any address should be able to view the current Stem master', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.neuronMaster,
+            configuration.stemInstance.stemMaster,
             configuration.account_addresses[1],
             gasEstimate => 2 * gasEstimate,
             (err, master) => {
@@ -531,9 +531,9 @@ describe('Mastery:', () => {
             },
         ));
 
-    it('the current Neuron master should be able to hand off mastery to a new Neuron master', done =>
+    it('the current Stem master should be able to hand off mastery to a new Stem master', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.changeMastery,
+            configuration.stemInstance.changeMastery,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             configuration.account_addresses[1],
@@ -543,7 +543,7 @@ describe('Mastery:', () => {
                 }
 
                 return getGasEstimateAndCall(
-                    configuration.neuronInstance.neuronMaster,
+                    configuration.stemInstance.stemMaster,
                     configuration.account_addresses[0],
                     gasEstimate => 2 * gasEstimate,
                     (masterErr, master) => {
@@ -558,16 +558,16 @@ describe('Mastery:', () => {
             },
         ));
 
-    it('only the Neuron master should be able to change the mastery of a contract', done =>
+    it('only the Stem master should be able to change the mastery of a contract', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.changeMastery,
+            configuration.stemInstance.changeMastery,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             configuration.account_addresses[0],
             (changeErr) => {
                 if (changeErr) {
                     return getGasEstimateAndCall(
-                        configuration.neuronInstance.neuronMaster,
+                        configuration.stemInstance.stemMaster,
                         configuration.account_addresses[2],
                         gasEstimate => 2 * gasEstimate,
                         (masterErr, master) => {
@@ -602,7 +602,7 @@ describe('increaseSupply and decreaseSupply', () => {
             }
 
             return getGasEstimateAndCall(
-                configuration.neuronInstance.transfer,
+                configuration.stemInstance.transfer,
                 configuration.account_addresses[0],
                 gasEstimate => 2 * gasEstimate,
                 configuration.account_addresses[1],
@@ -615,9 +615,9 @@ describe('increaseSupply and decreaseSupply', () => {
         configuration.provider.close(done);
     });
 
-    it('the neuron master should be able to increase supply, with the new tokens being credited to their account', done =>
+    it('the stem master should be able to increase supply, with the new tokens being credited to their account', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.increaseSupply,
+            configuration.stemInstance.increaseSupply,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             17,
@@ -630,7 +630,7 @@ describe('increaseSupply and decreaseSupply', () => {
                     [
                         callback =>
                             getGasEstimateAndCall(
-                                configuration.neuronInstance.balanceOf,
+                                configuration.stemInstance.balanceOf,
                                 configuration.account_addresses[0],
                                 gasEstimate => 2 * gasEstimate,
                                 configuration.account_addresses[0],
@@ -638,7 +638,7 @@ describe('increaseSupply and decreaseSupply', () => {
                             ),
                         callback =>
                             getGasEstimateAndCall(
-                                configuration.neuronInstance.totalSupply,
+                                configuration.stemInstance.totalSupply,
                                 configuration.account_addresses[0],
                                 gasEstimate => 2 * gasEstimate,
                                 callback,
@@ -659,9 +659,9 @@ describe('increaseSupply and decreaseSupply', () => {
             },
         ));
 
-    it('the neuron master should be able to decrease the supply, with the difference in supply being erased from their account', done =>
+    it('the stem master should be able to decrease the supply, with the difference in supply being erased from their account', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.decreaseSupply,
+            configuration.stemInstance.decreaseSupply,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             17,
@@ -673,7 +673,7 @@ describe('increaseSupply and decreaseSupply', () => {
                     [
                         callback =>
                             getGasEstimateAndCall(
-                                configuration.neuronInstance.balanceOf,
+                                configuration.stemInstance.balanceOf,
                                 configuration.account_addresses[0],
                                 gasEstimate => 2 * gasEstimate,
                                 configuration.account_addresses[0],
@@ -681,7 +681,7 @@ describe('increaseSupply and decreaseSupply', () => {
                             ),
                         callback =>
                             getGasEstimateAndCall(
-                                configuration.neuronInstance.totalSupply,
+                                configuration.stemInstance.totalSupply,
                                 configuration.account_addresses[0],
                                 gasEstimate => 2 * gasEstimate,
                                 callback,
@@ -702,9 +702,9 @@ describe('increaseSupply and decreaseSupply', () => {
             },
         ));
 
-    it('the neuron master should not be able to decrease supply in excess of their wealth', done =>
+    it('the stem master should not be able to decrease supply in excess of their wealth', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.decreaseSupply,
+            configuration.stemInstance.decreaseSupply,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             101,
@@ -714,7 +714,7 @@ describe('increaseSupply and decreaseSupply', () => {
                         [
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.balanceOf,
+                                    configuration.stemInstance.balanceOf,
                                     configuration.account_addresses[0],
                                     gasEstimate => 2 * gasEstimate,
                                     configuration.account_addresses[0],
@@ -722,7 +722,7 @@ describe('increaseSupply and decreaseSupply', () => {
                                 ),
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.totalSupply,
+                                    configuration.stemInstance.totalSupply,
                                     configuration.account_addresses[0],
                                     gasEstimate => 2 * gasEstimate,
                                     callback,
@@ -750,9 +750,9 @@ describe('increaseSupply and decreaseSupply', () => {
             },
         ));
 
-    it('no one but the neuron master should be able to increase supply', done =>
+    it('no one but the stem master should be able to increase supply', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.increaseSupply,
+            configuration.stemInstance.increaseSupply,
             configuration.account_addresses[1],
             gasEstimate => 2 * gasEstimate,
             1,
@@ -762,7 +762,7 @@ describe('increaseSupply and decreaseSupply', () => {
                         [
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.balanceOf,
+                                    configuration.stemInstance.balanceOf,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     configuration.account_addresses[1],
@@ -770,7 +770,7 @@ describe('increaseSupply and decreaseSupply', () => {
                                 ),
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.totalSupply,
+                                    configuration.stemInstance.totalSupply,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     callback,
@@ -798,9 +798,9 @@ describe('increaseSupply and decreaseSupply', () => {
             },
         ));
 
-    it('no one but the neuron master should be able to decrease supply', done =>
+    it('no one but the stem master should be able to decrease supply', done =>
         getGasEstimateAndCall(
-            configuration.neuronInstance.decreaseSupply,
+            configuration.stemInstance.decreaseSupply,
             configuration.account_addresses[1],
             gasEstimate => 2 * gasEstimate,
             1,
@@ -810,7 +810,7 @@ describe('increaseSupply and decreaseSupply', () => {
                         [
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.balanceOf,
+                                    configuration.stemInstance.balanceOf,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     configuration.account_addresses[1],
@@ -818,7 +818,7 @@ describe('increaseSupply and decreaseSupply', () => {
                                 ),
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.totalSupply,
+                                    configuration.stemInstance.totalSupply,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     callback,
@@ -857,7 +857,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
    * configuration.account_addresses[1] then raises the allowance for
    * configuration.account_addresses[2] against its account to 30.
    *
-   * configuration.account_addresses[3] also deploys a new instance of the Neuron contract
+   * configuration.account_addresses[3] also deploys a new instance of the Stem contract
    */
     before(done =>
         setUp(configuration, true, (err) => {
@@ -869,7 +869,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 [
                     function prepareOldContract(callback) {
                         getGasEstimateAndCall(
-                            configuration.neuronInstance.transfer,
+                            configuration.stemInstance.transfer,
                             configuration.account_addresses[0],
                             gasEstimate => 2 * gasEstimate,
                             configuration.account_addresses[1],
@@ -897,9 +897,9 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                                     return callback(estimationErr);
                                 }
 
-                                return configuration.Neuron.new(
-                                    'Neuron',
-                                    'NRN',
+                                return configuration.Stem.new(
+                                    'Stem',
+                                    'STM',
                                     100,
                                     {
                                         from: configuration.account_addresses[0],
@@ -913,7 +913,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                                         }
 
                                         if (newContractInstance.address) {
-                                            configuration.newNeuronInstance = newContractInstance;
+                                            configuration.newStemInstance = newContractInstance;
                                             return callback();
                                         }
                                     },
@@ -933,10 +933,10 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
 
     it('reclamationWhitelist: a new contract instance should not refer to any old contracts in its reclamationWhitelist', done =>
         getGasEstimateAndCall(
-            configuration.newNeuronInstance.reclamationWhitelist,
+            configuration.newStemInstance.reclamationWhitelist,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
-            configuration.neuronInstance.address,
+            configuration.stemInstance.address,
             (viewErr, oldContractInWhitelist) => {
                 if (viewErr) {
                     return done(viewErr);
@@ -947,19 +947,19 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
             },
         ));
 
-    it('whitelistContractForReclamation: no one but the neuron master should be able to add a contract address to the whitelist', done =>
+    it('whitelistContractForReclamation: no one but the stem master should be able to add a contract address to the whitelist', done =>
         getGasEstimateAndCall(
-            configuration.newNeuronInstance.whitelistContractForReclamation,
+            configuration.newStemInstance.whitelistContractForReclamation,
             configuration.account_addresses[3],
             gasEstimate => 2 * gasEstimate,
-            configuration.neuronInstance.address,
+            configuration.stemInstance.address,
             (whitelistErr, whitelistResult) => {
                 if (whitelistErr) {
                     return getGasEstimateAndCall(
-                        configuration.newNeuronInstance.reclamationWhitelist,
+                        configuration.newStemInstance.reclamationWhitelist,
                         configuration.account_addresses[3],
                         gasEstimate => 2 * gasEstimate,
-                        configuration.neuronInstance.address,
+                        configuration.stemInstance.address,
                         (viewErr, oldContractInWhitelist) => {
                             if (viewErr) {
                                 return done(viewErr);
@@ -980,21 +980,21 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
         ));
 
     // Todo(nkashy1): Investigate why this whitelistContractForReclamation errors out if
-    // newNeuronInstance was created by a separate account (configuration.account_addresses[3]
+    // newStemInstance was created by a separate account (configuration.account_addresses[3]
     // originally). This may be a bug in setUp or in prepareNewContract in the before callback.
     // Less likely: bug in ganache-core.
     // Context: Initially, prepareNewContract was created by configuration.account_addresses[3],
     // but the require(hasMastery(msg.sender)) in the whitelistContractForReclamation call was
-    // causing a reversion although neuronMaster was still being recognized as the right account.
+    // causing a reversion although stemMaster was still being recognized as the right account.
     // Removing this requirement (and therefore making the whitelistContractForReclamation method
     // publicly callable) caused the following test (appropriately modified with the right sender
     // address) to pass.
-    it('whitelistContractForReclamation: the neuron master should be able to add a contract address to the whitelist', done =>
+    it('whitelistContractForReclamation: the stem master should be able to add a contract address to the whitelist', done =>
         getGasEstimateAndCall(
-            configuration.newNeuronInstance.whitelistContractForReclamation,
+            configuration.newStemInstance.whitelistContractForReclamation,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
-            configuration.neuronInstance.address,
+            configuration.stemInstance.address,
             (whitelistErr, whitelistResult) => {
                 if (whitelistErr) {
                     return done(whitelistErr);
@@ -1003,10 +1003,10 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 assert(whitelistResult);
 
                 return getGasEstimateAndCall(
-                    configuration.newNeuronInstance.reclamationWhitelist,
+                    configuration.newStemInstance.reclamationWhitelist,
                     configuration.account_addresses[0],
                     gasEstimate => 2 * gasEstimate,
-                    configuration.neuronInstance.address,
+                    configuration.stemInstance.address,
                     (viewErr, oldContractInWhitelist) => {
                         if (viewErr) {
                             return done(viewErr);
@@ -1021,10 +1021,10 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
 
     it('reclaimBalanceFrom: should fail if the reclaimer has not authorized the new contract to transfer the reclaimed amount on the old contract', done =>
         getGasEstimateAndCall(
-            configuration.newNeuronInstance.reclaimBalanceFrom,
+            configuration.newStemInstance.reclaimBalanceFrom,
             configuration.account_addresses[1],
             gasEstimate => 2 * gasEstimate,
-            configuration.neuronInstance.address,
+            configuration.stemInstance.address,
             configuration.account_addresses[1],
             25,
             (reclamationErr, reclamationResult) => {
@@ -1033,7 +1033,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                         [
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.newNeuronInstance.balanceOf,
+                                    configuration.newStemInstance.balanceOf,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     configuration.account_addresses[1],
@@ -1048,7 +1048,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                                 ),
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.balanceOf,
+                                    configuration.stemInstance.balanceOf,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
                                     configuration.account_addresses[1],
@@ -1063,10 +1063,10 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                                 ),
                             callback =>
                                 getGasEstimateAndCall(
-                                    configuration.neuronInstance.balanceOf,
+                                    configuration.stemInstance.balanceOf,
                                     configuration.account_addresses[1],
                                     gasEstimate => 2 * gasEstimate,
-                                    configuration.newNeuronInstance.address,
+                                    configuration.newStemInstance.address,
                                     (balanceErr, balance) => {
                                         if (balanceErr) {
                                             return callback(balanceErr);
@@ -1092,14 +1092,14 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
     it('reclaimBalanceFrom: should succeed if the reclaimer has authorized the new contract to transfer the reclaimed amount on the old contract', done =>
         async.series(
             [
-                // configuration.account_addresses[1] approves new Neuron instance to make transfers
-                // on its behalf on the old Neuron instance to the amount of 49 tokens
+                // configuration.account_addresses[1] approves new Stem instance to make transfers
+                // on its behalf on the old Stem instance to the amount of 49 tokens
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.neuronInstance.approve,
+                        configuration.stemInstance.approve,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
-                        configuration.newNeuronInstance.address,
+                        configuration.newStemInstance.address,
                         49,
                         (approvalErr, approvalResult) => {
                             if (approvalErr) {
@@ -1110,14 +1110,14 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                             return callback();
                         },
                     ),
-                // configuration.account_addresses[1] reclaims 48 tokens from the old Neuron
+                // configuration.account_addresses[1] reclaims 48 tokens from the old Stem
                 // instance
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.newNeuronInstance.reclaimBalanceFrom,
+                        configuration.newStemInstance.reclaimBalanceFrom,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
-                        configuration.neuronInstance.address,
+                        configuration.stemInstance.address,
                         configuration.account_addresses[1],
                         48,
                         (reclamationErr, reclamationResult) => {
@@ -1129,12 +1129,12 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                             return callback();
                         },
                     ),
-                // This means that the ledger on the old Neuron instance should reflect that
+                // This means that the ledger on the old Stem instance should reflect that
                 // configuration.account_addresses[1] now has 2 tokens (which is 48 less than) it
                 // had at the outset
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.neuronInstance.balanceOf,
+                        configuration.stemInstance.balanceOf,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[1],
@@ -1151,10 +1151,10 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 // belonging to the new contract
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.neuronInstance.balanceOf,
+                        configuration.stemInstance.balanceOf,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
-                        configuration.newNeuronInstance.address,
+                        configuration.newStemInstance.address,
                         (balanceErr, balance) => {
                             if (balanceErr) {
                                 return callback(balanceErr);
@@ -1169,11 +1169,11 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 // transferred
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.neuronInstance.allowance,
+                        configuration.stemInstance.allowance,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[1],
-                        configuration.newNeuronInstance.address,
+                        configuration.newStemInstance.address,
                         (allowanceErr, allowance) => {
                             if (allowanceErr) {
                                 return callback(allowanceErr);
@@ -1187,7 +1187,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 // is 48 tokens more than it used to have, on the new contract
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.newNeuronInstance.balanceOf,
+                        configuration.newStemInstance.balanceOf,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
                         configuration.account_addresses[1],
@@ -1204,7 +1204,7 @@ describe('reclamationWhitelist, whitelistContractFroReclamation, and reclaimBala
                 // had been before this reclamation
                 callback =>
                     getGasEstimateAndCall(
-                        configuration.newNeuronInstance.totalSupply,
+                        configuration.newStemInstance.totalSupply,
                         configuration.account_addresses[1],
                         gasEstimate => 2 * gasEstimate,
                         (supplyErr, supply) => {

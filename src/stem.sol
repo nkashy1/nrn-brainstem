@@ -5,39 +5,39 @@ pragma solidity ^0.4.21;
  * https://github.com/Giveth/minime/blob/master/contracts/MiniMeToken.sol
  */
 
-contract Neuron {
-    // Neuron constructor
+contract Stem {
+    // Stem constructor
     constructor(string _name, string _symbol, uint256 initialSupply) public {
         name = _name;
         symbol = _symbol;
-        neuronMaster = msg.sender;
+        stemMaster = msg.sender;
         totalSupply = initialSupply;
         ledger[msg.sender] = initialSupply;
     }
 
 
-    // Neuron token is issued by a Neuron Master, and this master has rights over
+    // Stem token is issued by a Stem Master, and this master has rights over
     // the token in excess of regular users.
-    address public neuronMaster;
+    address public stemMaster;
     
     function hasMastery(address entity) internal view returns (bool) {
-        return entity == neuronMaster;
+        return entity == stemMaster;
     }
 
-    // Of course, the Neuron Master can change. But only if the original one
+    // Of course, the Stem Master can change. But only if the original one
     // instigates the change.
-    function changeMastery(address newNeuronMaster) public {
+    function changeMastery(address newStemMaster) public {
         require(hasMastery(msg.sender));
-        neuronMaster = newNeuronMaster;
+        stemMaster = newStemMaster;
     }
 
 
-    // Display information for Neuron token
+    // Display information for Stem token
     // ERC20 methods: name, symbol
     string public name;
     string public symbol;
 
-    // The current neuron master (and only the current neuron master)
+    // The current stem master (and only the current stem master)
     // has the ability to change the display information.
     function changeName(string newName) public returns (bool) {
         require(hasMastery(msg.sender));
@@ -136,18 +136,18 @@ contract Neuron {
     // Whitelist functionality to define which contracts balance can be reclaimed from
     mapping(address => bool) public reclamationWhitelist;
 
-    function whitelistContractForReclamation(Neuron oldNeuron) public returns (bool) {
+    function whitelistContractForReclamation(Stem oldStem) public returns (bool) {
         require(hasMastery(msg.sender));
-        reclamationWhitelist[address(oldNeuron)] = true;
+        reclamationWhitelist[address(oldStem)] = true;
         return true;
     }
     
-    // Allows transfer of token balance from old versions of the Neuron contract
+    // Allows transfer of token balance from old versions of the Stem contract
     // to the current one. The current contract has to be approved to transfer
     // at least the specified amount on behalf of the given account on the old contract.
-    function reclaimBalanceFrom(Neuron oldNeuron, address account, uint256 amount) public returns (bool) {
-        require(reclamationWhitelist[address(oldNeuron)]);
-        require(oldNeuron.transferFrom(account, this, amount));
+    function reclaimBalanceFrom(Stem oldStem, address account, uint256 amount) public returns (bool) {
+        require(reclamationWhitelist[address(oldStem)]);
+        require(oldStem.transferFrom(account, this, amount));
         // Calling increaseSupply and transfer as external methods means that, in
         // those calls, msg.sender is the address of the contract instance in which
         // the reclaimBalanceFrom method was called.
