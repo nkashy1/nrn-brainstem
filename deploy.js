@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const _ = require('lodash');
+const net = require('net');
 const readline = require('readline');
 const solc = require('solc');
 const Web3 = require('web3');
@@ -17,13 +18,11 @@ yargs
     )
     .option('provider', {
         alias: 'p',
-        describe:
-      'Resource descriptor for provider: path to IPC socket, or HTTP or websocket URI',
+        describe: 'Resource descriptor for provider: path to IPC socket, or HTTP or websocket URI',
     })
     .option('provider-type', {
         alias: 't',
-        describe:
-      'Type of provider that should be used to connect to ethereum-based node',
+        describe: 'Type of provider that should be used to connect to ethereum-based node',
         choices: ['ipc', 'http', 'ws'],
     })
     .option('contract-file', {
@@ -32,8 +31,7 @@ yargs
     })
     .option('contract-name', {
         alias: 'n',
-        describe:
-      'Name of contract from contract file that you would like to deploy',
+        describe: 'Name of contract from contract file that you would like to deploy',
     })
     .option('sender-address', {
         alias: 's',
@@ -57,6 +55,7 @@ const compiledContract = _.get(compilationResult, [
     `:${contractName}`,
 ]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
+const preparedContractBytecode = `0x${contractBytecode}`;
 console.log('Contract compilation complete!');
 
 // Set up web3 client
@@ -72,6 +71,10 @@ const web3Providers = {
 function makeClient(clientProvider, clientProviderType) {
     if (!clientProviderType) {
         return new Web3(clientProvider);
+    }
+
+    if (clientProviderType === 'ipc') {
+        return new Web3(new web3Providers[clientProviderType](clientProvider, net));
     }
 
     return new Web3(new web3Providers[clientProviderType](clientProvider));
@@ -90,7 +93,7 @@ console.log('Web3 client ready!');
  * This part is asynchronous
  */
 console.log('Deploying contract...');
-web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
+web3.eth.estimateGas({ data: preparedContractBytecode }, (err, gasEstimate) => {
     if (err) {
         throw err;
     }
@@ -127,7 +130,7 @@ web3.eth.estimateGas({ data: contractBytecode }, (err, gasEstimate) => {
             ...yargs.argv._,
             {
                 from: senderAddress,
-                data: contractBytecode,
+                data: preparedContractBytecode,
                 gas: gasAllocation,
             },
             (creationErr, contractInstance) => {
