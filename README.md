@@ -24,14 +24,12 @@ The respository also includes tools that can be used to deploy these contracts t
 
 + [`node v9.11.1`](https://nodejs.org/en/blog/release/v9.11.1/) or later
 
-+ [`yarn`](https://yarnpkg.com/en/) (although `npm` will probably suffice)
-
 
 ### Getting set up
 
 Simply run:
 ```
-yarn install
+npm install
 ```
 
 
@@ -40,11 +38,11 @@ yarn install
 From project root:
 
 ```
-yarn test
+npm test
 ```
 
 To run specific tests:
 
 ```
-yarn test <path to test>
+npm test <path to test>
 ```
