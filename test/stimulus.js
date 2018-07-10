@@ -35,6 +35,8 @@ const stem = contractArtifacts('../src/stem.sol', 'Stem');
 const stimulus = contractArtifacts('../src/stimulus.sol', 'Stimulus');
 
 
+// Global constants which will be used in the following tests
+const STEM_SUPPLY = 12000000000000;
 const STIMULUS_REWARDS = [10000000, 5000000, 1000000, 0, 0];
 
 
@@ -98,7 +100,7 @@ function setUp(configuration, done) {
             return configuration.Stem.new(
                 'Stem',
                 'STM',
-                12000000000000,
+                STEM_SUPPLY,
                 {
                     from: configuration.account_addresses[0],
                     data: stemBytecode,
@@ -160,13 +162,13 @@ function setUp(configuration, done) {
                 /* eslint-enable consistent-return */
             );
         },
-        // Approve deployed Stimulus contract to spend maximum allowable amount on behalf of deployer
+        // Approve Stimulus instance to spend maximum allowable amount on behalf of deployer
         (stemInstance, stimulusInstance, next) => getGasEstimateAndCall(
             stemInstance.approve,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
             stimulusInstance.address,
-            1000000000000,
+            STEM_SUPPLY,
             next,
         ),
     ], done);
@@ -232,8 +234,8 @@ describe('Stimulus enrollment', () => {
     );
 
     it(
-        'proposing enrollment should cause a Stimulation event to be fired',
-        done => configuration.stimulusInstance.Stimulation(
+        'proposing enrollment should cause a StimulusRequest event to be fired',
+        done => configuration.stimulusInstance.StimulusRequest(
             {},
             { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
         ).get(
@@ -314,8 +316,8 @@ describe('Stimulus enrollment', () => {
     );
 
     it(
-        'a successful enrollment rejection should result in a Response event being emitted',
-        done => configuration.stimulusInstance.Response(
+        'a successful enrollment rejection should result in a StimulusResponse event being emitted',
+        done => configuration.stimulusInstance.StimulusResponse(
             {},
             { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
         ).get(
@@ -373,8 +375,8 @@ describe('Stimulus enrollment', () => {
                 gasEstimate => 2 * gasEstimate,
                 acceptableSubmissionId,
             ),
-            // Stimulation event emitted
-            next => configuration.stimulusInstance.Stimulation(
+            // StimulusRequest event emitted
+            next => configuration.stimulusInstance.StimulusRequest(
                 {},
                 { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
             ).get((err, events) => {
@@ -411,8 +413,8 @@ describe('Stimulus enrollment', () => {
                 acceptableSubmissionId,
                 true,
             ),
-            // Response event is emitted
-            next => configuration.stimulusInstance.Response(
+            // StimulusResponse event is emitted
+            next => configuration.stimulusInstance.StimulusResponse(
                 {},
                 { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
             ).get(
@@ -458,3 +460,4 @@ describe('Stimulus enrollment', () => {
         ], done);
     });
 });
+
