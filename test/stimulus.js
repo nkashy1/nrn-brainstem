@@ -35,6 +35,9 @@ const stem = contractArtifacts('../src/stem.sol', 'Stem');
 const stimulus = contractArtifacts('../src/stimulus.sol', 'Stimulus');
 
 
+const STIMULUS_REWARDS = [10000000, 5000000, 1000000, 0, 0];
+
+
 /**
  * Sets up a web3 client and related objects for use in each test scenario.
  * Does this by populating the `configuration` object, defined in the scope
@@ -135,7 +138,7 @@ function setUp(configuration, done) {
 
             return configuration.Stimulus.new(
                 stemInstance.address,
-                [10000000, 5000000, 1000000, 0, 0],
+                STIMULUS_REWARDS,
                 {
                     from: configuration.account_addresses[0],
                     data: stimulusBytecode,
@@ -408,7 +411,7 @@ describe('Stimulus enrollment', () => {
                 acceptableSubmissionId,
                 true,
             ),
-            // Response event is emmitted
+            // Response event is emitted
             next => configuration.stimulusInstance.Response(
                 {},
                 { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
@@ -437,7 +440,7 @@ describe('Stimulus enrollment', () => {
                     };
 
                     assert.deepEqual(actualArgs, expectedArgs);
-                    return done();
+                    return next();
                 },
             ),
             // NRN is transferred from PI's account to candidate's account
@@ -448,7 +451,7 @@ describe('Stimulus enrollment', () => {
                 configuration.account_addresses[2],
                 (err, balance) => {
                     assert(!err);
-                    assert(balance.toNumber() > 0);
+                    assert.strictEqual(balance.toNumber(), STIMULUS_REWARDS[0]);
                     return next();
                 },
             ),
