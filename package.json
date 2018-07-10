@@ -1,6 +1,6 @@
 {
   "name": "nrn-brainstem",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "NRN and related smart contracts",
   "main": "README.md",
   "repository": "git@github.com:doc-ai/nrn-brainstem.git",
