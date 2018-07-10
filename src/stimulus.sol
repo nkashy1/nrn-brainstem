@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "./stem.sol";
 
 /**
- * Stimulus is intended for deployment by data trial principal investigator (PI). There should be
+ * Stimulus is intended for deployment by a data trial principal investigator (PI). There should be
  * one Stimulus contract per data trial.
  *
  * The contract offers the following semantics:
