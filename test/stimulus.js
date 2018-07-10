@@ -1,7 +1,7 @@
 /**
- * This file contains tests for the Stimuli smart contract found in ../src/stimuli.sol
+ * This file contains tests for the Stimulus smart contract found in ../src/stimulus.sol
  *
- * You can search for tests for a particular Stimuli contract method by searching for its name in
+ * You can search for tests for a particular Stimulus contract method by searching for its name in
  * this file.
  */
 
@@ -32,7 +32,7 @@ function contractArtifacts(contractPath, contractName) {
 
 
 const stem = contractArtifacts('../src/stem.sol', 'Stem');
-const stimuli = contractArtifacts('../src/stimuli.sol', 'Stimuli');
+const stimulus = contractArtifacts('../src/stimulus.sol', 'Stimulus');
 
 
 /**
@@ -50,7 +50,7 @@ const stimuli = contractArtifacts('../src/stimuli.sol', 'Stimuli');
  * 2. account_addresses - list of addresses for each of the accounts (in the same order
  * as the list of accounts)
  * 3. Stem - Stem contract object
- * 4. Stimuli - Stimuli contract object
+ * 4. Stimulus - Stimulus contract object
  * 5. provider - RPC provider (in this case, we are using a ganache-core Provider object)
  * 6. web3 - web3 client object
  *
@@ -72,12 +72,12 @@ function setUp(configuration, done) {
     configuration.Stem = configuration.web3.eth.contract(
         JSON.parse(_.get(stem, 'interface')),
     );
-    configuration.Stimuli = configuration.web3.eth.contract(
-        JSON.parse(_.get(stimuli, 'interface')),
+    configuration.Stimulus = configuration.web3.eth.contract(
+        JSON.parse(_.get(stimulus, 'interface')),
     );
 
     const stemBytecode = _.get(stem, 'bytecode');
-    const stimuliBytecode = _.get(stimuli, 'bytecode');
+    const stimulusBytecode = _.get(stimulus, 'bytecode');
 
     async.waterfall([
         // Get gas estimate for Stem contract deployment
@@ -117,9 +117,9 @@ function setUp(configuration, done) {
                 /* eslint-enable consistent-return */
             );
         },
-        // Get gas estimate for Stimuli contract deployment
+        // Get gas estimate for Stimulus contract deployment
         (stemInstance, next) => {
-            configuration.web3.eth.estimateGas({ data: stimuliBytecode }, (err, gasEstimate) => {
+            configuration.web3.eth.estimateGas({ data: stimulusBytecode }, (err, gasEstimate) => {
                 if (err) {
                     return next(err);
                 }
@@ -127,18 +127,18 @@ function setUp(configuration, done) {
                 return next(null, stemInstance, gasEstimate);
             });
         },
-        // Deploy Stimuli contract -- mimics Stem deployment
+        // Deploy Stimulus contract -- mimics Stem deployment
         (stemInstance, gasEstimate, next) => {
             const callInfo = {
                 new: 0,
             };
 
-            return configuration.Stimuli.new(
+            return configuration.Stimulus.new(
                 stemInstance.address,
                 [10000000, 5000000, 1000000, 0, 0],
                 {
                     from: configuration.account_addresses[0],
-                    data: stimuliBytecode,
+                    data: stimulusBytecode,
                     gas: 2 * gasEstimate,
                 },
                 /* eslint-disable consistent-return */
@@ -150,19 +150,19 @@ function setUp(configuration, done) {
                     callInfo.new += 1;
 
                     if (callInfo.new === 2) {
-                        configuration.stimuliInstance = contractInstance;
+                        configuration.stimulusInstance = contractInstance;
                         return next(null, stemInstance, contractInstance);
                     }
                 },
                 /* eslint-enable consistent-return */
             );
         },
-        // Approve deployed Stimuli contract to spend maximum allowable amount on behalf of deployer
-        (stemInstance, stimuliInstance, next) => getGasEstimateAndCall(
+        // Approve deployed Stimulus contract to spend maximum allowable amount on behalf of deployer
+        (stemInstance, stimulusInstance, next) => getGasEstimateAndCall(
             stemInstance.approve,
             configuration.account_addresses[0],
             gasEstimate => 2 * gasEstimate,
-            stimuliInstance.address,
+            stimulusInstance.address,
             1000000000000,
             next,
         ),
@@ -170,7 +170,7 @@ function setUp(configuration, done) {
     /* eslint-enable no-param-reassign */
 }
 
-describe('Stimuli setup', () => {
+describe('Stimulus setup', () => {
     const configuration = {};
 
     before(done => setUp(configuration, done));
@@ -180,13 +180,13 @@ describe('Stimuli setup', () => {
     it('should proceed without failure when provided with a valid Stem contract address', () => {});
 
     it(
-        'should include the Stimuli contract being approved to spend Stem tokens on behalf of its deployer',
+        'should include the Stimulus contract being approved to spend Stem tokens on behalf of its deployer',
         done => getGasEstimateAndCall(
             configuration.stemInstance.allowance,
             configuration.account_addresses[1],
             gasEstimate => 2 * gasEstimate,
             configuration.account_addresses[0],
-            configuration.stimuliInstance.address,
+            configuration.stimulusInstance.address,
             (err, allowance) => {
                 if (err) {
                     return done(err);
