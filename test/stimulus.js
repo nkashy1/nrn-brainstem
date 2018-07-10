@@ -722,37 +722,31 @@ describe('Stimulus participant status and data submission', () => {
 
     it(
         'submit: should revert submissions from addresses not enrolled in the trial',
-        done => getGasEstimateAndCall(
-            configuration.stimulusInstance.submit,
-            configuration.account_addresses[3],
-            gasEstimate => 2 * gasEstimate,
+        done => configuration.stimulusInstance.submit(
             1,
             0,
+            { from: configuration.account_addresses[3] },
             (err, success) => done(!err),
         ),
     );
 
     it(
         'submit: should revert submissions from addresses rejected from the trial',
-        done => getGasEstimateAndCall(
-            configuration.stimulusInstance.submit,
-            configuration.account_addresses[2],
-            gasEstimate => 2 * gasEstimate,
+        done => configuration.stimulusInstance.submit(
             1,
             0,
+            { from: configuration.account_addresses[2] },
             (err, success) => done(!err),
         ),
     );
 
     it(
         'submit: should process submissions from addresses accepted into the trial',
-        done => getGasEstimateAndCall(
-            configuration.stimulusInstance.submit,
-            configuration.account_addresses[8],
-            gasEstimate => 2 * gasEstimate,
+        done => configuration.stimulusInstance.submit(
             1,
             acceptableSubmissionId,
-            (err, success) => done(err),
+            { from: configuration.account_addresses[1] },
+            done,
         ),
     );
 });
