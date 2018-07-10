@@ -32,7 +32,7 @@ contract Stimulus {
     // State variables
     Stem public nrn;
     address public pi;
-    uint[5] public rewards;
+    uint256[5] public rewards;
 
     // For the values:
     // 0 - participant has neither been accepted nor rejected into the data trial
