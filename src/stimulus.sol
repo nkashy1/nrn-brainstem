@@ -24,12 +24,7 @@ import "./stem.sol";
  * 4. An accepted user may at any time submit data pertinent to the trial. The data is submitted
  *    off of this contract, but the user is expected to log their submission by calling the submit
  *    method of this contract. Submission fires a Stimulation event.
- * 5. The data trial PI can accept or reject any data submission. Rejection must come with a
- *    rejection code specifying the reason for rejection. Acceptance is predicated on the PI being
- *    able to transfer NRN from their account to that of the data trial participant. The amount of
- *    NRN transferred is determined by the data type (provided with the submission) and the rewards
- *    are specified in a rewards array publicly visible on the Stimulus contract.
- *
+*
  * NOTE: The PI should approve the deployed Stimulus contract to pay out the appropriate amount
  * of NRN tokens.
  */
@@ -41,8 +36,9 @@ contract Stimulus {
 
     // For the values:
     // 0 - participant has neither been accepted nor rejected into the data trial
-    // 1 - participant has been accepted into the data trial
+    // 1 - participant has attempted to enroll in the data trial
     // 2 - participant has been rejected from the data trial
+    // 3 - participant has been accepted into the data trial
     mapping(address => uint8) participants;
 
     // Events
@@ -50,8 +46,8 @@ contract Stimulus {
     // 0: enrollment
     // > 0: data trial-specific collection types
     // Reward for collection type i is specified by rewards[i]
-    event Stimulation(address indexed _candidate, uint8 indexed _stimulusType, uint _stimulusId);
-    event Response(address indexed _candidate, uint8 indexed _stimulusType, uint stimulusId, bool accepted);
+    event Stimulation(address indexed _candidate, uint8 indexed _stimulusType, uint256 _stimulusId);
+    event Response(address indexed _candidate, uint8 indexed _stimulusType, uint256 _stimulusId, bool _accepted);
 
     constructor(address _nrn, uint[5] _rewards) public {
         nrn = Stem(_nrn);
@@ -61,5 +57,43 @@ contract Stimulus {
         for (i = 0; i < 5; i++) {
             rewards[i] = _rewards[i];
         }
+    }
+
+    function enroll(uint256 secret) public returns (bool success) {
+        require(participants[msg.sender] != 2);
+        participants[msg.sender] = 1;
+        emit Stimulation(msg.sender, 0, secret);
+        return true;
+    }
+
+    function submit(uint8 stimulusType, uint256 stimulusId) public returns (bool success) {
+        require(participants[msg.sender] == 3);
+        require(stimulusType > 0);
+        require(stimulusType < 5);
+        emit Stimulation(msg.sender, stimulusType, stimulusId);
+        return true;
+    }
+
+    function respondToEnrollment(address candidate, uint256 stimulusId, bool accept) public returns (bool success) {
+        require(msg.sender == pi);
+        if (accept) {
+            require(nrn.transferFrom(pi, candidate, rewards[0]));
+            participants[candidate] = 3;
+        } else {
+            participants[candidate] = 2;
+        }
+        emit Response(candidate, 0, stimulusId, accept);
+        return true;
+    }
+
+    function respond(address candidate, uint8 stimulusType, uint256 stimulusId, bool accept) public returns (bool success) {
+        require(msg.sender == pi);
+        require(stimulusType > 0);
+        require(stimulusType < 5);
+        if (accept) {
+            require(nrn.transferFrom(pi, candidate, rewards[stimulusType]));
+        }
+        emit Response(candidate, stimulusType, stimulusId, accept);
+        return true;
     }
 }
