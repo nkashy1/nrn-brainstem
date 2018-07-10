@@ -49,7 +49,7 @@ contract Stimulus {
     event StimulusRequest(address indexed _candidate, uint8 indexed _stimulusType, uint256 _stimulusId);
     event StimulusResponse(address indexed _candidate, uint8 indexed _stimulusType, uint256 _stimulusId, bool _accepted);
 
-    constructor(address _nrn, uint[5] _rewards) public {
+    constructor(address _nrn, uint256[5] _rewards) public {
         nrn = Stem(_nrn);
         pi = msg.sender;
 
@@ -57,6 +57,10 @@ contract Stimulus {
         for (i = 0; i < 5; i++) {
             rewards[i] = _rewards[i];
         }
+    }
+
+    function status(address participant) public view returns (uint8) {
+        return participants[participant];
     }
 
     function enroll(uint256 secret) public returns (bool success) {
