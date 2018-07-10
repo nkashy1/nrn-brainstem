@@ -199,3 +199,259 @@ describe('Stimulus setup', () => {
         ),
     );
 });
+
+describe('Stimulus enrollment', () => {
+    const configuration = { latestEventBlock: 0 };
+
+    const submissionId = 2370;
+
+    before(done => setUp(configuration, done));
+
+    after(done => configuration.provider.close(done));
+
+    it(
+        'enroll should allow users who are not blacklisted to propose their enrollment into the trial',
+        done => getGasEstimateAndCall(
+            configuration.stimulusInstance.enroll,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            submissionId,
+            (err, success) => {
+                if (err) {
+                    return done(err);
+                }
+                if (!success) {
+                    return done(new Error('Expected: successful enrollment, actual: failure'));
+                }
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'proposing enrollment should cause a Stimulation event to be fired',
+        done => configuration.stimulusInstance.Stimulation(
+            {},
+            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+        ).get(
+            (err, events) => {
+                assert(!err);
+                assert.strictEqual(events.length, 1);
+
+                const event = events[0];
+                configuration.latestEventBlock = event.blockNumber;
+
+                /* eslint-disable no-underscore-dangle */
+                const actualArgs = {
+                    _candidate: event.args._candidate,
+                    _stimulusId: event.args._stimulusId.toNumber(),
+                    _stimulusType: event.args._stimulusType.toNumber(),
+                };
+                /* eslint-enable no-underscore-dangle */
+
+                const expectedArgs = {
+                    _candidate: configuration.account_addresses[1],
+                    _stimulusType: 0,
+                    _stimulusId: submissionId,
+                };
+
+                assert.deepEqual(actualArgs, expectedArgs);
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'no one who is not the data trial PI should be able to accept an enrollment proposal',
+        done => getGasEstimateAndCall(
+            configuration.stimulusInstance.respondToEnrollment,
+            configuration.account_addresses[2],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[1],
+            submissionId,
+            true,
+            (err, success) => {
+                assert(err);
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'no one who is not the data trial PI should be able to reject an enrollment proposal',
+        done => getGasEstimateAndCall(
+            configuration.stimulusInstance.respondToEnrollment,
+            configuration.account_addresses[2],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[1],
+            submissionId,
+            false,
+            (err, success) => {
+                assert(err);
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'the data trial PI should be able to reject an enrollment proposal',
+        done => getGasEstimateAndCall(
+            configuration.stimulusInstance.respondToEnrollment,
+            configuration.account_addresses[0],
+            gasEstimate => 2 * gasEstimate,
+            configuration.account_addresses[1],
+            submissionId,
+            false,
+            (err, success) => {
+                assert(!err);
+                assert(success);
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'a successful enrollment rejection should result in a Response event being emitted',
+        done => configuration.stimulusInstance.Response(
+            {},
+            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+        ).get(
+            (err, events) => {
+                assert(!err);
+                assert.strictEqual(events.length, 1);
+
+                const event = events[0];
+                configuration.latestEventBlock = event.blockNumber;
+
+                /* eslint-disable no-underscore-dangle */
+                const actualArgs = {
+                    _candidate: event.args._candidate,
+                    _stimulusId: event.args._stimulusId.toNumber(),
+                    _stimulusType: event.args._stimulusType.toNumber(),
+                    _accepted: event.args._accepted,
+                };
+                /* eslint-enable no-underscore-dangle */
+
+                const expectedArgs = {
+                    _candidate: configuration.account_addresses[1],
+                    _stimulusType: 0,
+                    _stimulusId: submissionId,
+                    _accepted: false,
+                };
+
+                assert.deepEqual(actualArgs, expectedArgs);
+                return done();
+            },
+        ),
+    );
+
+    it(
+        'a person who has already been rejected from a data trial may not re-apply',
+        done => getGasEstimateAndCall(
+            configuration.stimulusInstance.enroll,
+            configuration.account_addresses[1],
+            gasEstimate => 2 * gasEstimate,
+            submissionId,
+            (err, success) => {
+                assert(err);
+                return done();
+            },
+        ),
+    );
+
+    it('the data trial PI should be able to accept enrollment proposals', (done) => {
+        const acceptableSubmissionId = submissionId + 1;
+        async.series([
+            // New user attempts enrollment
+            async.apply(
+                getGasEstimateAndCall,
+                configuration.stimulusInstance.enroll,
+                configuration.account_addresses[2],
+                gasEstimate => 2 * gasEstimate,
+                acceptableSubmissionId,
+            ),
+            // Stimulation event emitted
+            next => configuration.stimulusInstance.Stimulation(
+                {},
+                { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            ).get((err, events) => {
+                assert(!err);
+                assert.strictEqual(events.length, 1);
+
+                const event = events[0];
+                configuration.latestEventBlock = event.blockNumber;
+
+                /* eslint-disable no-underscore-dangle */
+                const actualArgs = {
+                    _candidate: event.args._candidate,
+                    _stimulusId: event.args._stimulusId.toNumber(),
+                    _stimulusType: event.args._stimulusType.toNumber(),
+                };
+                /* eslint-enable no-underscore-dangle */
+
+                const expectedArgs = {
+                    _candidate: configuration.account_addresses[2],
+                    _stimulusType: 0,
+                    _stimulusId: acceptableSubmissionId,
+                };
+
+                assert.deepEqual(actualArgs, expectedArgs);
+                return next();
+            }),
+            // PI accepts enrollment
+            async.apply(
+                getGasEstimateAndCall,
+                configuration.stimulusInstance.respondToEnrollment,
+                configuration.account_addresses[0],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[2],
+                acceptableSubmissionId,
+                true,
+            ),
+            // Response event is emmitted
+            next => configuration.stimulusInstance.Response(
+                {},
+                { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            ).get(
+                (err, events) => {
+                    assert(!err);
+                    assert.strictEqual(events.length, 1);
+
+                    const event = events[0];
+                    configuration.latestEventBlock = event.blockNumber;
+
+                    /* eslint-disable no-underscore-dangle */
+                    const actualArgs = {
+                        _candidate: event.args._candidate,
+                        _stimulusId: event.args._stimulusId.toNumber(),
+                        _stimulusType: event.args._stimulusType.toNumber(),
+                        _accepted: event.args._accepted,
+                    };
+                    /* eslint-enable no-underscore-dangle */
+
+                    const expectedArgs = {
+                        _candidate: configuration.account_addresses[2],
+                        _stimulusType: 0,
+                        _stimulusId: acceptableSubmissionId,
+                        _accepted: true,
+                    };
+
+                    assert.deepEqual(actualArgs, expectedArgs);
+                    return done();
+                },
+            ),
+            // NRN is transferred from PI's account to candidate's account
+            next => getGasEstimateAndCall(
+                configuration.stemInstance.balanceOf,
+                configuration.account_addresses[2],
+                gasEstimate => 2 * gasEstimate,
+                configuration.account_addresses[2],
+                (err, balance) => {
+                    assert(!err);
+                    assert(balance.toNumber() > 0);
+                    return next();
+                },
+            ),
+        ], done);
+    });
+});
