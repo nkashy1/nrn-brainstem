@@ -237,7 +237,7 @@ describe('Stimulus enroll, respondToEnrollment', () => {
         'enroll: proposing enrollment should cause a StimulusRequest event to be fired',
         done => configuration.stimulusInstance.StimulusRequest(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -319,7 +319,7 @@ describe('Stimulus enroll, respondToEnrollment', () => {
         'respondToEnrollment: successful enrollment rejection should result in a StimulusResponse',
         done => configuration.stimulusInstance.StimulusResponse(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -380,7 +380,7 @@ describe('Stimulus enroll, respondToEnrollment', () => {
                 // StimulusRequest event emitted
                 next => configuration.stimulusInstance.StimulusRequest(
                     {},
-                    { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+                    { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
                 ).get((err, events) => {
                     assert(!err);
                     assert.strictEqual(events.length, 1);
@@ -418,7 +418,7 @@ describe('Stimulus enroll, respondToEnrollment', () => {
                 // StimulusResponse event is emitted
                 next => configuration.stimulusInstance.StimulusResponse(
                     {},
-                    { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+                    { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
                 ).get(
                     (err, events) => {
                         assert(!err);
@@ -464,7 +464,7 @@ describe('Stimulus enroll, respondToEnrollment', () => {
     );
 });
 
-describe('Stimulus participant status and data submission', () => {
+describe('Stimulus participant status, data submission, PI response', () => {
     const configuration = { latestEventBlock: 0 };
 
     const acceptableSubmissionId = 1337;
@@ -492,7 +492,7 @@ describe('Stimulus participant status and data submission', () => {
         // Check that StimulusRequest event was emitted
         next => configuration.stimulusInstance.StimulusRequest(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -532,7 +532,7 @@ describe('Stimulus participant status and data submission', () => {
         // Check that StimulusResponse was emitted
         next => configuration.stimulusInstance.StimulusResponse(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -572,7 +572,7 @@ describe('Stimulus participant status and data submission', () => {
         // Check that StimulusRequest event was emitted
         next => configuration.stimulusInstance.StimulusRequest(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -612,7 +612,7 @@ describe('Stimulus participant status and data submission', () => {
         // Check that StimulusResponse was emitted
         next => configuration.stimulusInstance.StimulusResponse(
             {},
-            { fromBlock: configuration.latestEventBlock, toBlock: 'latest' },
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
         ).get(
             (err, events) => {
                 assert(!err);
@@ -749,4 +749,210 @@ describe('Stimulus participant status and data submission', () => {
             done,
         ),
     );
+
+    it(
+        'submit: successful submissions should result in a StimulusRequest event emission',
+        done => configuration.stimulusInstance.StimulusRequest(
+            {},
+            { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
+        ).get((err, events) => {
+            assert(!err);
+            assert.strictEqual(events.length, 1);
+
+            const event = events[0];
+            configuration.latestEventBlock = event.blockNumber;
+
+            /* eslint-disable no-underscore-dangle */
+            const actualArgs = {
+                _candidate: event.args._candidate,
+                _stimulusId: event.args._stimulusId.toNumber(),
+                _stimulusType: event.args._stimulusType.toNumber(),
+            };
+            /* eslint-enable no-underscore-dangle */
+
+            const expectedArgs = {
+                _candidate: configuration.account_addresses[1],
+                _stimulusType: 1,
+                _stimulusId: acceptableSubmissionId,
+            };
+
+            try {
+                assert.deepEqual(actualArgs, expectedArgs);
+            } catch (assertionErr) {
+                return done(assertionErr);
+            }
+
+            return done();
+        }),
+    );
+
+    it(
+        'submit: participants in good standing must be able to make multiple submissions in a row',
+        done => async.series([
+            next => configuration.stimulusInstance.submit(
+                2,
+                unacceptableSubmissionId,
+                { from: configuration.account_addresses[1] },
+                next,
+            ),
+            next => configuration.stimulusInstance.StimulusRequest(
+                {},
+                { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
+            ).get((err, events) => {
+                assert(!err);
+                assert.strictEqual(events.length, 1);
+
+                const event = events[0];
+                configuration.latestEventBlock = event.blockNumber;
+
+                /* eslint-disable no-underscore-dangle */
+                const actualArgs = {
+                    _candidate: event.args._candidate,
+                    _stimulusId: event.args._stimulusId.toNumber(),
+                    _stimulusType: event.args._stimulusType.toNumber(),
+                };
+                /* eslint-enable no-underscore-dangle */
+
+                const expectedArgs = {
+                    _candidate: configuration.account_addresses[1],
+                    _stimulusType: 2,
+                    _stimulusId: unacceptableSubmissionId,
+                };
+
+                try {
+                    assert.deepEqual(actualArgs, expectedArgs);
+                } catch (assertionErr) {
+                    return next(assertionErr);
+                }
+
+                return next();
+            }),
+        ], done),
+    );
+
+    it(
+        'respond: PIs should be able to reject submissions',
+        done => async.series([
+            next => configuration.stimulusInstance.respond(
+                configuration.account_addresses[1],
+                2,
+                unacceptableSubmissionId,
+                false,
+                { from: configuration.account_addresses[0] },
+                next,
+            ),
+            next => configuration.stimulusInstance.StimulusResponse(
+                {},
+                { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
+            ).get(
+                (err, events) => {
+                    assert(!err);
+                    assert.strictEqual(events.length, 1);
+
+                    const event = events[0];
+                    configuration.latestEventBlock = event.blockNumber;
+
+                    /* eslint-disable no-underscore-dangle */
+                    const actualArgs = {
+                        _candidate: event.args._candidate,
+                        _stimulusId: event.args._stimulusId.toNumber(),
+                        _stimulusType: event.args._stimulusType.toNumber(),
+                        _accepted: event.args._accepted,
+                    };
+                    /* eslint-enable no-underscore-dangle */
+
+                    const expectedArgs = {
+                        _candidate: configuration.account_addresses[1],
+                        _stimulusType: 2,
+                        _stimulusId: unacceptableSubmissionId,
+                        _accepted: false,
+                    };
+
+                    try {
+                        assert.deepEqual(actualArgs, expectedArgs);
+                    } catch (assertionErr) {
+                        return next(assertionErr);
+                    }
+
+                    return next();
+                },
+            ),
+        ], done),
+    );
+
+    it(
+        'respond: PIs should be able to accept submissions and transfer NRN as a result',
+        done => async.series([
+            next => configuration.stimulusInstance.respond(
+                configuration.account_addresses[1],
+                1,
+                acceptableSubmissionId,
+                true,
+                { from: configuration.account_addresses[0] },
+                next,
+            ),
+            next => configuration.stimulusInstance.StimulusResponse(
+                {},
+                { fromBock: configuration.latestEvenBlock + 1, toBlock: 'latest' },
+            ).get(
+                (err, events) => {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    try {
+                        assert.strictEqual(events.length, 1);
+                    } catch (assertionErr) {
+                        return next(assertionErr);
+                    }
+
+                    const event = events[0];
+                    configuration.latestEventBlock = event.blockNumber;
+
+                    /* eslint-disable no-underscore-dangle */
+                    const actualArgs = {
+                        _candidate: event.args._candidate,
+                        _stimulusId: event.args._stimulusId.toNumber(),
+                        _stimulusType: event.args._stimulusType.toNumber(),
+                        _accepted: event.args._accepted,
+                    };
+                    /* eslint-enable no-underscore-dangle */
+
+                    const expectedArgs = {
+                        _candidate: configuration.account_addresses[1],
+                        _stimulusType: 1,
+                        _stimulusId: acceptableSubmissionId,
+                        _accepted: true,
+                    };
+
+                    try {
+                        assert.deepEqual(actualArgs, expectedArgs);
+                    } catch (assertionErr) {
+                        return next(assertionErr);
+                    }
+
+                    return next();
+                },
+            ),
+            next => configuration.stemInstance.balanceOf(
+                configuration.account_addresses[1],
+                { from: configuration.account_addresses[5] },
+                (err, balance) => {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    const expectedBalance = STIMULUS_REWARDS[0] + STIMULUS_REWARDS[1];
+                    try {
+                        assert.strictEqual(balance.toNumber(), expectedBalance);
+                    } catch (assertionErr) {
+                        return next(assertionErr);
+                    }
+
+                    return next();
+                },
+            ),
+        ], done),
+    );
+
 });
