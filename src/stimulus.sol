@@ -31,7 +31,7 @@ import "./stem.sol";
 contract Stimulus {
     // State variables
     Stem public nrn;
-    address public pi;
+    address public principalInvestigator;
     uint256[5] public rewards;
 
     // For the values:
@@ -51,7 +51,7 @@ contract Stimulus {
 
     constructor(address _nrn, uint256[5] _rewards) public {
         nrn = Stem(_nrn);
-        pi = msg.sender;
+        principalInvestigator = msg.sender;
 
         uint8 i;
         for (i = 0; i < 5; i++) {
@@ -79,9 +79,9 @@ contract Stimulus {
     }
 
     function respondToEnrollment(address candidate, uint256 stimulusId, bool accept) public returns (bool success) {
-        require(msg.sender == pi);
+        require(msg.sender == principalInvestigator);
         if (accept) {
-            require(nrn.transferFrom(pi, candidate, rewards[0]));
+            require(nrn.transferFrom(principalInvestigator, candidate, rewards[0]));
             participants[candidate] = 3;
         } else {
             participants[candidate] = 2;
@@ -91,11 +91,11 @@ contract Stimulus {
     }
 
     function respond(address candidate, uint8 stimulusType, uint256 stimulusId, bool accept) public returns (bool success) {
-        require(msg.sender == pi);
+        require(msg.sender == principalInvestigator);
         require(stimulusType > 0);
         require(stimulusType < 5);
         if (accept) {
-            require(nrn.transferFrom(pi, candidate, rewards[stimulusType]));
+            require(nrn.transferFrom(principalInvestigator, candidate, rewards[stimulusType]));
         }
         emit StimulusResponse(candidate, stimulusType, stimulusId, accept);
         return true;
