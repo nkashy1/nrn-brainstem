@@ -22,7 +22,7 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.7.0",
     "ganache-cli": "^6.1.0",
-    "ganache-core": "^2.1.0",
+    "ganache-core": "^2.2.1",
     "mocha": "^5.1.1",
     "prettier": "1.12.1"
   }
