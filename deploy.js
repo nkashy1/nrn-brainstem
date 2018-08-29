@@ -87,11 +87,15 @@ console.log('Web3 client ready!');
 
 const rawContractArgs = yargs.argv._;
 const contractArgs = rawContractArgs.map((arg) => {
-    const listifiedArgs = arg.split(',');
-    if (listifiedArgs.length === 1) {
-        return listifiedArgs[0];
+    try {
+        const listifiedArgs = arg.split(',');
+        if (listifiedArgs.length === 1) {
+            return listifiedArgs[0];
+        }
+        return listifiedArgs;
+    } catch (e) {
+        return arg;
     }
-    return listifiedArgs;
 });
 console.log(`Contract arguments: ${contractArgs}`);
 
