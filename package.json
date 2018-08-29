@@ -6,7 +6,6 @@
   "repository": "git@github.com:doc-ai/nrn-brainstem.git",
   "author": "Neeraj Kashyap <neeraj@doc.ai>",
   "license": "Apache-2.0",
-  "private": true,
   "scripts": {
     "test": "./node_modules/.bin/mocha"
   },
