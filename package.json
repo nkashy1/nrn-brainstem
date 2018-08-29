@@ -1,6 +1,6 @@
 {
-  "name": "nrn-brainstem",
-  "version": "0.1.0",
+  "name": "@doc.ai/nrn-brainstem",
+  "version": "0.2.0",
   "description": "NRN and related smart contracts",
   "main": "README.md",
   "repository": "git@github.com:doc-ai/nrn-brainstem.git",
@@ -22,7 +22,7 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.7.0",
     "ganache-cli": "^6.1.0",
-    "ganache-core": "^2.1.0",
+    "ganache-core": "^2.2.1",
     "mocha": "^5.1.1",
     "prettier": "1.12.1"
   }

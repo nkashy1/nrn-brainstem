@@ -4,9 +4,11 @@
  * accessible node with enough ether to cover the gas cost of deployment.
  */
 
+const compile = require('./compile.js');
 const fs = require('fs');
 const _ = require('lodash');
 const net = require('net');
+const path = require('path');
 const readline = require('readline');
 const solc = require('solc');
 const Web3 = require('web3');
@@ -14,7 +16,7 @@ const yargs = require('yargs');
 
 yargs
     .usage(
-        '$0 [--provider-type {ipc|http|ws}] --provider <path-to-provider> --contract-file <path-to-solidity-file> --contract-name <name-of-contract> --sender-adress <address> [contract-arguments ...]',
+        '$0 [--provider-type {ipc|http|ws}] --provider PATH_TO_PROVIDER --contract-file PATH_TO_SOLIDITY_FILE --contract-name CONTRACT_NAME --sender-adress ADDRESS [CONTRACT_ARG ...]',
     )
     .option('provider', {
         alias: 'p',
@@ -48,11 +50,11 @@ const {
 
 // Contract compilation
 console.log(`Compiling contract in ${contractFile}...`);
-const contract = fs.readFileSync(contractFile).toString();
-const compilationResult = solc.compile(contract);
+const contractPath = path.resolve(__dirname, contractFile);
+const compilationResult = compile(contractPath);
 const compiledContract = _.get(compilationResult, [
     'contracts',
-    `:${contractName}`,
+    `${contractPath}:${contractName}`,
 ]);
 const contractBytecode = _.get(compiledContract, 'bytecode');
 const preparedContractBytecode = `0x${contractBytecode}`;
@@ -82,6 +84,20 @@ function makeClient(clientProvider, clientProviderType) {
 
 const web3 = makeClient(provider, providerType);
 console.log('Web3 client ready!');
+
+const rawContractArgs = yargs.argv._;
+const contractArgs = rawContractArgs.map((arg) => {
+    try {
+        const listifiedArgs = arg.split(',');
+        if (listifiedArgs.length === 1) {
+            return listifiedArgs[0];
+        }
+        return listifiedArgs;
+    } catch (e) {
+        return arg;
+    }
+});
+console.log(`Contract arguments: ${contractArgs}`);
 
 /**
  * Deploy contract:
@@ -127,7 +143,7 @@ web3.eth.estimateGas({ data: preparedContractBytecode }, (err, gasEstimate) => {
         );
 
         return web3Contract.new(
-            ...yargs.argv._,
+            ...contractArgs,
             {
                 from: senderAddress,
                 data: preparedContractBytecode,
