@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * This script allows you to deploy a smart contract to an ethereum-based blockchain of
  * your choosing. The only requirement is that you have an unlocked account on an
