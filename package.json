@@ -1,6 +1,6 @@
 {
   "name": "@doc.ai/nrn-brainstem",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "NRN and related smart contracts",
   "main": "README.md",
   "repository": "git@github.com:doc-ai/nrn-brainstem.git",
@@ -8,6 +8,9 @@
   "license": "Apache-2.0",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
+  },
+  "bin": {
+      "nrn-brainstem-deploy": "./deploy.js"
   },
   "dependencies": {
     "async": "^2.6.0",
