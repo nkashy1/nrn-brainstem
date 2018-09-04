@@ -10,7 +10,7 @@
     "test": "./node_modules/.bin/mocha"
   },
   "bin": {
-      "nrn-brainstem-deploy": "./deploy.js"
+    "nrn-brainstem-deploy": "./deploy.js"
   },
   "dependencies": {
     "async": "^2.6.0",
@@ -24,6 +24,7 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.7.0",
     "ganache-cli": "^6.1.0",
+    "jsdoc": "^3.5.5",
     "ganache-core": "^2.2.1",
     "mocha": "^5.1.1",
     "prettier": "1.12.1"

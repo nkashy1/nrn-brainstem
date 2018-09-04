@@ -9,7 +9,7 @@ const solc = require('solc');
  * This method is synchronous and may throw an error (for example, if it is not able to find a file
  * along the given contractPath).
  *
- * @param {string} contractPath
+ * @param {string} contractPath The filesystem path to the contract file.
  * @return {Object} Compiled solidity contract as per https://github.com/ethereum/solc-js
  */
 function compile(contractPath) {

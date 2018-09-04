@@ -1,4 +1,5 @@
 /**
+ * @file
  * Generate an interface to a deployed smart contract from this repository.
  */
 

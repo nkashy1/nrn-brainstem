@@ -7,7 +7,7 @@
  * @param {string} fromAccount - String representing address which should make the method call
  * @param {Function} assignGas - Logic determining how to produce actual gas sent with method
  * call based on gas estimate, e.g. (gasEstimate) => 2*gasEstimate
- * @param {...} rest - List of arguments to contract method, followed by callback
+ * @param {...Object} rest - List of arguments to contract method, followed by callback
  */
 function getGasEstimateAndCall(
     contractMethod,
