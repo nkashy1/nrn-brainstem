@@ -63,10 +63,10 @@ contract Stimulus {
         return participants[participant];
     }
 
-    function enroll(uint256 secret) public returns (bool success) {
+    function enroll(uint256 stimulusId) public returns (bool success) {
         require(participants[msg.sender] != 2);
         participants[msg.sender] = 1;
-        emit StimulusRequest(msg.sender, 0, secret);
+        emit StimulusRequest(msg.sender, 0, stimulusId);
         return true;
     }
 
