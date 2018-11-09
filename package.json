@@ -1,11 +1,12 @@
 {
   "name": "@doc.ai/nrn-brainstem",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "NRN and related smart contracts",
   "main": "README.md",
   "repository": "git@github.com:doc-ai/nrn-brainstem.git",
   "author": "Neeraj Kashyap <neeraj@doc.ai>",
   "license": "Apache-2.0",
+  "private": false,
   "scripts": {
     "test": "./node_modules/.bin/mocha"
   },
